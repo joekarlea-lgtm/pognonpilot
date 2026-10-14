@@ -320,6 +320,11 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .regsum>div{gap:2px}
 .regsum .khead{flex-direction:row!important;align-items:center}
 
+.pp-list{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.16);max-height:280px;overflow:auto;padding:6px}
+.pp-list button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:9px 10px;border-radius:10px;font-size:15px}
+.pp-list button:hover,.pp-list button[aria-selected="true"]{background:var(--accent-soft)}.pp-list .ico.xs{margin-left:0}
+.pp-head{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 10px 4px}
+.pp-empty{font-size:13.5px;color:var(--muted);padding:10px}
 .recrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px 14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .recrow:last-child{border-bottom:0}.recrow.off{opacity:.6}
 .rectx{all:unset;cursor:pointer;min-width:0;display:flex;flex-direction:column}.rectx b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rectx span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1027,7 +1032,8 @@ function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const 
    </form>
    <div class="actions">${r?'<button class="btn danger" id="delRec">Supprimer</button>':""}<div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveRec">Enregistrer</button></div></div>`);
    modal.querySelectorAll("[data-rmode]").forEach(b=>b.onclick=()=>{mode=b.dataset.rmode;draw()});
-   const pf=document.getElementById("r-payee"),fc=document.getElementById("r-cat");pf.addEventListener("input",()=>{if(fc.value)return;const k=payeeDefaultCat(pf.value.trim());if(k&&[...fc.options].some(o=>o.value===k))fc.value=k});
+   const pf=document.getElementById("r-payee"),fc=document.getElementById("r-cat");attachPayeePicker(pf);const lb=document.getElementById("r-label");let lbAuto=!lb.value;lb.addEventListener("input",()=>{lbAuto=!lb.value});
+   pf.addEventListener("input",()=>{if(lbAuto)lb.value=pf.value;if(fc.value)return;const k=payeeDefaultCat(pf.value.trim());if(k&&[...fc.options].some(o=>o.value===k))fc.value=k});
    const save=()=>{const label=document.getElementById("r-label").value.trim();if(!label){toast("Donne un libellé à la récurrente.");return}
      const amt=parseAmount(document.getElementById("r-amt").value)||0;const next=document.getElementById("r-next").value;if(!next){toast("Choisis la prochaine échéance.");return}
      const [catId,subId]=(fc.value||"|").split("|");
@@ -1042,6 +1048,27 @@ function recDo(id){const r=S.recurring.find(x=>x.id===id);if(!r)return;
 function upcomingCard(){const l=upcoming(7);if(!S.recurring.some(r=>r.active))return"";
   return`<section class="panel" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">À venir</h2><button class="link" data-view="rec">Voir l'échéancier</button></div>
    ${l.length?l.map(recRow).join(""):'<div class="cat" style="padding:6px 0">Aucune échéance dans les 7 prochains jours.</div>'}</section>`}
+
+/* liste déroulante des tiers (remplace la suggestion native, peu fiable sur Android) */
+function popularPayees(){const cnt={};S.tx.forEach(t=>{if(!t.transferId&&t.payee)cnt[t.payee]=(cnt[t.payee]||0)+1});
+  return payeeNames().slice().sort((a,b)=>(cnt[b]||0)-(cnt[a]||0)||a.localeCompare(b,"fr"))}
+function attachPayeePicker(input){if(!input||input.dataset.pp)return;input.dataset.pp="1";input.removeAttribute("list");input.setAttribute("autocomplete","off");
+  input.setAttribute("role","combobox");input.setAttribute("aria-autocomplete","list");input.setAttribute("aria-expanded","false");
+  const host=input.parentNode;host.style.position="relative";const box=document.createElement("div");box.className="pp-list";box.hidden=true;box.setAttribute("role","listbox");host.appendChild(box);
+  let items=[],sel=-1,skip=false;
+  const close=()=>{box.hidden=true;input.setAttribute("aria-expanded","false");sel=-1};
+  const mark=()=>[...box.children].forEach((b,i)=>b.setAttribute("aria-selected",i===sel));
+  const show=()=>{if(skip){skip=false;return}const q=norm(input.value.trim());const all=q?payeeNames().filter(n=>norm(n).includes(q)):popularPayees();
+    items=all.slice(0,8);if(!items.length){box.innerHTML=q?`<div class="pp-empty">Nouveau tiers : « ${esc(input.value.trim())} » sera créé</div>`:"";box.hidden=!q;return}
+    box.innerHTML=(q?"":'<div class="pp-head">Les plus utilisés</div>')+items.map((n,i)=>`<button type="button" role="option" data-ppi="${i}">${xs(payeeIco((S.payees||[]).find(x=>x.name===n),n))}<span>${esc(n)}</span></button>`).join("");
+    sel=-1;box.hidden=false;input.setAttribute("aria-expanded","true")};
+  const pick=i=>{const n=items[i];if(n==null)return;input.value=n;close();skip=true;input.dispatchEvent(new Event("input",{bubbles:true}))};
+  input.addEventListener("focus",show);input.addEventListener("input",show);input.addEventListener("blur",()=>setTimeout(close,150));
+  box.addEventListener("mousedown",e=>e.preventDefault());
+  box.addEventListener("click",e=>{const b=e.target.closest("[data-ppi]");if(b)pick(+b.dataset.ppi)});
+  input.addEventListener("keydown",e=>{if(box.hidden)return;const n=box.querySelectorAll("[data-ppi]").length;
+    if(e.key==="ArrowDown"){e.preventDefault();sel=(sel+1)%n;mark()}else if(e.key==="ArrowUp"){e.preventDefault();sel=(sel-1+n)%n;mark()}
+    else if(e.key==="Enter"&&sel>=0){e.preventDefault();pick(sel)}else if(e.key==="Escape"){e.stopPropagation();close()}})}
 /* ---------- fenêtres ---------- */
 const modal=document.getElementById("modal");
 function openSheet(html){modal.innerHTML=`<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;const f=modal.querySelector("input:not([type=hidden]),select");f&&f.focus()}
@@ -1073,7 +1100,7 @@ function txSheet(id,presetMode,pre){
     </form>
     <div class="actions"><div class="row">${t?'<button class="btn danger" id="delTx">Supprimer</button>':""}${t&&!t.transferId?'<button class="btn" id="mkRec">'+pillIco("calendar")+'Rendre récurrente</button>':""}</div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
     modal.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;draw()});
-    const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");let autoCat=!tv;
+    const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");attachPayeePicker(pf);let autoCat=!tv;
     if(pf&&fcEl){fcEl.addEventListener("change",()=>{autoCat=false});pf.addEventListener("input",()=>{if(!autoCat&&fcEl.value)return;const k=payeeDefaultCat(pf.value.trim());
       if(k&&[...fcEl.options].some(o=>o.value===k)){fcEl.value=k;autoCat=true;fcEl.classList.add("prefill");setTimeout(()=>fcEl.classList.remove("prefill"),900)}})}
     const save=()=>{
