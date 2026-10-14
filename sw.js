@@ -1,6 +1,6 @@
 /* PognonPILOT — fonctionnement hors ligne.
    Change VERSION à chaque mise à jour des fichiers pour renouveler le cache. */
-const VERSION = "pognonpilot-v11";
+const VERSION = "pognonpilot-v12";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
@@ -39,7 +39,7 @@ self.addEventListener("fetch", event => {
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       try {
-        const res = await fetch(req);
+        const res = await fetch(req, { cache: "no-store" });
         const cache = await caches.open(VERSION);
         cache.put("./index.html", res.clone());
         return res;

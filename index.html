@@ -770,7 +770,7 @@ function fileStatus(){const linked=fileHandle&&fileState!=="none";const st=fileS
   return`<section class="fstatus"><div class="fhead"><span class="ico lg ${st[0]==="ok"?"t2":st[0]==="warn"?"t4":"t7"}">${svgIco("doc")}</span><div style="min-width:0"><b class="ftitle">${st[1]}</b>
    <div class="cat">${linked?esc(fileHandle.name)+" · ":""}dernier enregistrement : ${when}</div></div><button class="btn" data-act="backup">Sauvegarder une copie datée</button></div>
    <div class="fstats">${stat(active().length,"comptes actifs","bank",0)}${stat(S.tx.length,"opérations","list",3)}${stat(S.categories.length,"catégories","tag",4)}${stat((S.payees||[]).length,"tiers","user",6)}${stat((S.recurring||[]).length,"récurrentes","calendar",1)}</div>
-   ${ds.length?`<div class="cat">Historique du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</div>`:""}</section>`}
+   <div class="cat">${ds.length?`Historique du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])} · `:""}Version de l'appli : ${APP_VERSION}</div></section>`}
 function renderFile(){
   main.innerHTML=`${banner()}<div class="head"><div><div class="eyebrow">Données</div><h1>Fichiers</h1></div></div>
   ${fileStatus()}
@@ -1023,7 +1023,7 @@ function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const 
     <div class="field full"><label for="r-label">Libellé</label><input class="inp" id="r-label" required value="${esc(src.label||src.payee||"")}" placeholder="Ex. Stockage Cloud"></div>
     <div class="field"><label for="r-amt">Montant prévu (€)</label><input class="inp num" id="r-amt" inputmode="decimal" value="${src.amount?String(Math.abs(src.amount)).replace(".",","):""}" placeholder="0,00"></div>
     <div class="field"><label for="r-acc">Compte</label><select class="inp" id="r-acc">${accOptions(defAcc)}</select></div>
-    <div class="field"><label for="r-payee">Tiers</label><input class="inp" id="r-payee" list="dl-rpayees" autocomplete="off" value="${esc(src.payee||"")}"><datalist id="dl-rpayees">${payeeNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>
+    <div class="field"><label for="r-payee">Tiers</label><input class="inp" id="r-payee" autocomplete="off" value="${esc(src.payee||"")}"></div>
     <div class="field"><label for="r-cat">Catégorie</label><select class="inp" id="r-cat"><option value="">Non catégorisé</option>${catOptions(null,src.catId?`${src.catId}|${src.subId||""}`:"")}</select></div>
     <div class="field"><label for="r-freq">Fréquence</label><select class="inp" id="r-freq">${FREQS.map(f=>`<option value="${f[0]}" ${(src.freq||"M")===f[0]?"selected":""}>${f[1]}</option>`).join("")}</select></div>
     <div class="field"><label for="r-next">Prochaine échéance</label><input class="inp" type="date" id="r-next" required value="${src.next||today()}"></div>
@@ -1093,7 +1093,7 @@ function txSheet(id,presetMode,pre){
      <div class="field full"><label for="f-amt">Montant (€)</label><input class="inp amountinp num" id="f-amt" inputmode="decimal" required placeholder="0,00" value="${tv&&tv.amount?String(Math.abs(tv.amount)).replace(".",","):""}"></div>
      <div class="field"><label for="f-acc">${isV?"Depuis le compte":"Compte"}</label><select class="inp" id="f-acc">${accOptions(base?base.accountId:defAcc)}</select></div>
      ${isV?`<div class="field"><label for="f-to">Vers le compte</label><select class="inp" id="f-to">${accOptions(to?to.accountId:S.accounts.find(a=>a.id!==defAcc)?.id)}</select></div>`:`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${tv?tv.date:today()}" required></div>`}
-     ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" list="dl-payees" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required><datalist id="dl-payees">${payeeNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>`}
+     ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required></div>`}
      ${isV?"":`<div class="field ${isV?"":""}"><label for="f-cat">Catégorie</label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,tv?`${tv.catId||""}|${tv.subId||""}`:"")}</select></div>`}
      <div class="field"><label for="f-st">Statut</label><select class="inp" id="f-st"><option value="">Non rapprochée</option><option value="R" ${(base?.status)==="R"?"selected":""}>Rapprochée (R)</option></select></div>
      <div class="field full"><label for="f-note">Note</label><input class="inp" id="f-note" value="${esc(base?.note||"")}" placeholder="Facultatif"></div>
@@ -1223,6 +1223,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return sorted(S.tx).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
+const APP_VERSION="12";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
@@ -1281,7 +1282,8 @@ const fileBanner=()=>fileState==="reconnect"?`<div class="banner"><span><b>Ton f
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;render()});
 window.addEventListener("appinstalled",()=>{deferredInstall=null;render();toast("PognonPILOT est installée")});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&fileHandle&&fileState==="linked")checkLinked(false)});
-if("serviceWorker" in navigator&&!window.claude&&window.isSecureContext)navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator&&!window.claude&&window.isSecureContext)navigator.serviceWorker.register("sw.js").then(r=>{document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")r.update().catch(()=>{})})}).catch(()=>{});
+if("serviceWorker" in navigator&&!window.claude){let reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloaded||dirty)return;reloaded=true;location.reload()})}
 
 /* ---------- événements ---------- */
 document.addEventListener("click",async e=>{
