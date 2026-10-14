@@ -325,6 +325,8 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .pp-list button:hover,.pp-list button[aria-selected="true"]{background:var(--accent-soft)}.pp-list .ico.xs{margin-left:0}
 .pp-head{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 10px 4px}
 .pp-empty{font-size:13.5px;color:var(--muted);padding:10px}
+
+.mtag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px 1px 5px;border-radius:99px;font-size:11.5px;font-weight:600;vertical-align:1px;margin-left:4px;white-space:nowrap}.mtag .pi{width:12px;height:12px}
 .recrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px 14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .recrow:last-child{border-bottom:0}.recrow.off{opacity:.6}
 .rectx{all:unset;cursor:pointer;min-width:0;display:flex;flex-direction:column}.rectx b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rectx span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -518,8 +520,10 @@ const ICONS={
  bars:'<path d="M5 20v-8M11 20V5M17 20v-5M3 20h18"/>',
  upload:'<path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/>',
  download:'<path d="M12 4v12M7 11l5 5 5-5M4 16v4h16v-4"/>',
+ card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
+ repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
  chip:'<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>'};
-const ICON_KEYS=Object.keys(ICONS).filter(k=>!["list","calendar","up","down","pending","check","scale","wallet","pie","trend","bars","upload","download"].includes(k));
+const ICON_KEYS=Object.keys(ICONS).filter(k=>!["card","repeat","list","calendar","up","down","pending","check","scale","wallet","pie","trend","bars","upload","download"].includes(k));
 /* icônes des sous-catégories et des tiers, devinées d'après leur nom */
 const SUB_GUESS=[[/CHAUDIERE|GAZ|CHAUFFAGE/,"flame"],[/CLOUD/,"cloud"],[/\bEAU\b/,"drop"],[/ELECTRIC/,"bolt"],[/INTERNET|BOX|WIFI/,"wifi"],[/STREAMING|NETFLIX|VIDEO/,"play"],[/TELECOM|MOBILE|TELEPHON/,"phone"],
  [/CAFE|BISTROT/,"coffee"],[/COURSE/,"cart"],[/RESTAURANT|RESTO/,"utensils"],[/TICKET/,"ticket"],[/CARBURANT|ESSENCE/,"fuel"],[/AMENDE/,"doc"],[/ASSURANCE|MUTUELLE|PREVOYANCE/,"shield"],
@@ -656,7 +660,7 @@ function renderReg(){
   // solde courant (calculé sur l'ordre chronologique)
   const run={};if(regAcc!=="all"){let b=accById(regAcc).initial;list.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(t=>{b+=t.amount;run[t.id]=b})}
   const q=regQ.trim().toLowerCase();
-  if(q)list=list.filter(t=>(t.payee+" "+catLabel(t)+" "+(t.note||"")).toLowerCase().includes(q));
+  if(q)list=list.filter(t=>(t.payee+" "+catLabel(t)+" "+(t.note||"")+" "+(t.mode||"")).toLowerCase().includes(q));
   const ym=today().slice(0,7);
   if(regF==="nr")list=list.filter(t=>t.status!=="R");else if(regF==="month")list=list.filter(t=>t.date.startsWith(ym));
   else if(regF==="dep")list=list.filter(t=>t.amount<0&&!t.transferId);else if(regF==="rev")list=list.filter(t=>t.amount>0&&!t.transferId);
@@ -673,7 +677,7 @@ function renderReg(){
   <div class="cat hint-mob">Glisse une opération vers la droite pour la rapprocher, vers la gauche pour la supprimer.</div>
   <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th>Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
   ${(()=>{let ld="";return list.slice(0,400).map(t=>{const h=t.date!==ld?`<tr class="dayrow"><td colspan="5">${dayLabel(t.date)}</td></tr>`:"";ld=t.date;return h+`<tr data-tx="${t.id}"><td class="s"><button class="chip ${t.status}" data-status="${t.id}" aria-label="${t.status==="R"?"Annuler le rapprochement":"Marquer rapprochée"}">${t.status==="R"?"R":"·"}</button></td><td class="d num">${fdate(t.date)}</td>
-   <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}</div><div class="cat">${esc(catLabel(t))}${t.note?" · "+esc(t.note):""}</div></div></div></td>
+   <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}</div><div class="cat">${esc(catLabel(t))}${t.mode?" "+modeTag(t.mode):""}${t.note?" · "+esc(t.note):""}</div></div></div></td>
    <td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
   </tbody></table>`:`<div class="empty">Aucune opération${q?" ne correspond à cette recherche":""}. Ajoute-en une avec « Nouvelle opération » ou importe un relevé dans Fichiers.</div>`}</div>`;
   bindSwipe();
@@ -793,9 +797,9 @@ function renderFile(){
 /* ---------- rapports ---------- */
 const rep={period:"12m",from:"",to:"",accMode:"all",accSel:[],catMode:"all",catSel:[],payMode:"all",paySel:[],payQ:"",group:"all",evoMode:"same",evoFrom:"",evoTo:"",gran:"month"};
 const PERIODS=[["m0","Ce mois-ci"],["m1","Le mois dernier"],["3m","3 derniers mois"],["6m","6 derniers mois"],["12m","12 derniers mois"],["y0","Cette année"],["y1","L'année dernière"],["custom","Période personnalisée"]];
-const GROUPS=[["all","Tous les détails"],["cat","Par catégorie"],["sub","Par sous-catégorie"],["acc","Par compte"],["payee","Par tiers"]];
-const glab=()=>({all:"Opération",cat:"Catégorie",sub:"Sous-catégorie",acc:"Compte",payee:"Tiers"})[rep.group];
-const groupKey={cat:catName,sub:t=>catLabel(t),acc:t=>accById(t.accountId)?.name||"?",payee:t=>t.payee||"Sans tiers"};
+const GROUPS=[["all","Tous les détails"],["cat","Par catégorie"],["sub","Par sous-catégorie"],["acc","Par compte"],["payee","Par tiers"],["mode","Par mode de paiement"]];
+const glab=()=>({all:"Opération",cat:"Catégorie",sub:"Sous-catégorie",acc:"Compte",payee:"Tiers",mode:"Mode de paiement"})[rep.group];
+const groupKey={cat:catName,sub:t=>catLabel(t),acc:t=>accById(t.accountId)?.name||"?",payee:t=>t.payee||"Sans tiers",mode:t=>t.mode||"Non renseigné"};
 function repRange(){
   const n=new Date(),Y=n.getFullYear(),M=n.getMonth(),span=(a,b,L)=>({from:iso(a),to:iso(b),L});let r;
   switch(rep.period){
@@ -880,7 +884,7 @@ function renderRep(){
   ${rows.length?rows.slice(0,500).map(t=>`<tr data-tx="${t.id}"><td class="num">${fdate(t.date)}</td><td><div class="pwrap" style="display:flex;gap:10px;align-items:center">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}</div><div class="cat">${esc(catLabel(t))}</div></div></div></td><td class="cat">${esc(accById(t.accountId)?.name)}</td><td class="r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}</td></tr>`).join(""):`<tr><td colspan="4" class="empty">Aucune opération pour cette sélection.</td></tr>`}
   </tbody>${rows.length?`<tfoot><tr><td colspan="3">${rows.length} opération${rows.length>1?"s":""}${rows.length>500?" · 500 premières affichées":""}</td><td class="r num">${net>0?"+":""}${fmt(net)}</td></tr></tfoot>`:""}</table></div>`:`
   <div class="tablewrap"><table class="rep"><thead><tr><th>${glab()}</th><th class="r">Revenus</th><th class="r">Dépenses</th><th class="r">Net</th><th class="r">vs période préc.</th><th>Part des dépenses</th></tr></thead><tbody>
-  ${rows.length?rows.map(x=>{let ck=(rep.group==="cat"||rep.group==="sub")&&S.categories.find(c=>c.name===String(x.name).split(" › ")[0]);if(ck&&rep.group==="sub"){const sb=ck.subs.find(z=>z.name===String(x.name).split(" › ")[1]);if(sb)ck={icon:subIcon(sb,ck),tint:ck.tint}}if(!ck&&rep.group==="payee")ck=payeeIco((S.payees||[]).find(p=>p.name===x.name));return`<tr data-drill="${esc(x.name)}"><td class="payee"><span style="display:flex;gap:10px;align-items:center">${ck?catBadge(ck,"sm"):""}${esc(x.name)}</span></td><td class="r num pos">${x.rev?fmt(x.rev):""}</td><td class="r num">${x.dep?fmt(x.dep):""}</td><td class="r num ${x.net<0?"neg":"pos"}">${x.net>0?"+":""}${fmt(x.net)}</td><td class="r num">${evoCell(x)}</td>
+  ${rows.length?rows.map(x=>{let ck=(rep.group==="cat"||rep.group==="sub")&&S.categories.find(c=>c.name===String(x.name).split(" › ")[0]);if(ck&&rep.group==="sub"){const sb=ck.subs.find(z=>z.name===String(x.name).split(" › ")[1]);if(sb)ck={icon:subIcon(sb,ck),tint:ck.tint}}if(!ck&&rep.group==="payee")ck=payeeIco((S.payees||[]).find(p=>p.name===x.name));if(rep.group==="mode"){const mi=modeInfo(x.name);ck=x.name==="Non renseigné"?{icon:"tag",tint:7}:{icon:mi[1],tint:mi[2]}}return`<tr data-drill="${esc(x.name)}"><td class="payee"><span style="display:flex;gap:10px;align-items:center">${ck?catBadge(ck,"sm"):""}${esc(x.name)}</span></td><td class="r num pos">${x.rev?fmt(x.rev):""}</td><td class="r num">${x.dep?fmt(x.dep):""}</td><td class="r num ${x.net<0?"neg":"pos"}">${x.net>0?"+":""}${fmt(x.net)}</td><td class="r num">${evoCell(x)}</td>
    <td>${x.dep?`<div class="share"><div class="sharebar"><i style="width:${(x.dep/maxDep*100).toFixed(1)}%"></i></div><span class="num cat">${pct(tot.dep?x.dep/tot.dep*100:0)}</span></div>`:""}</td></tr>`}).join(""):`<tr><td colspan="5" class="empty">Aucune opération pour cette sélection.</td></tr>`}
   </tbody>${rows.length?`<tfoot><tr><td>Total</td><td class="r num">${fmt(tot.rev)}</td><td class="r num">${fmt(tot.dep)}</td><td class="r num">${net>0?"+":""}${fmt(net)}</td><td></td><td></td></tr></tfoot>`:""}</table></div>`}
   <p class="lede" style="margin-top:14px">Les virements entre tes comptes ne sont pas comptés. Un remboursement classé dans sa catégorie d'origine vient en déduction de la dépense. Clique sur une ligne pour voir ou modifier les opérations correspondantes.</p>`;
@@ -999,7 +1003,7 @@ const recBadge=r=>{const c=r.catId&&S.categories.find(x=>x.id===r.catId);if(!c)r
 function advanceRec(id){const r=S.recurring.find(x=>x.id===id);if(!r)return;r.next=addFreq(r.next,r.freq,r.day);r.last=today()}
 function upcoming(days,accId){return S.recurring.filter(r=>r.active&&(!accId||r.accountId===accId)&&daysTo(r.next)<=days).sort((a,b)=>a.next<b.next?-1:1)}
 function recRow(r){const d=dueInfo(r),a=accById(r.accountId);
-  return`<div class="recrow ${r.active?"":"off"}">${recBadge(r)}<button class="rectx" data-recedit="${r.id}"><b>${esc(r.label)}</b><span>${esc([r.payee,a?a.name:"",freqLabel(r.freq)].filter(Boolean).join(" · "))}</span></button>
+  return`<div class="recrow ${r.active?"":"off"}">${recBadge(r)}<button class="rectx" data-recedit="${r.id}"><b>${esc(r.label)}</b><span>${esc([r.payee,a?a.name:"",freqLabel(r.freq),r.mode].filter(Boolean).join(" · "))}</span></button>
    <span class="recright"><span class="num recamt ${r.amount>0?"pos":""}">${r.amount>0?"+":""}${fmt(r.amount)}</span>${r.active?`<span class="due ${d.cls}">${d.txt}</span>`:'<span class="due dlater">Inactive</span>'}</span>
    ${r.active?`<span class="recact"><button class="btn small primary" data-recdo="${r.id}">${pillIco("check")}Saisir</button><button class="btn small" data-recskip="${r.id}" title="Passer cette échéance sans créer d'opération">Passer</button></span>`:""}</div>`}
 function renderRec(){const act=S.recurring.filter(r=>r.active),off=S.recurring.filter(r=>!r.active);
@@ -1025,6 +1029,7 @@ function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const 
     <div class="field"><label for="r-acc">Compte</label><select class="inp" id="r-acc">${accOptions(defAcc)}</select></div>
     <div class="field"><label for="r-payee">Tiers</label><input class="inp" id="r-payee" autocomplete="off" value="${esc(src.payee||"")}"></div>
     <div class="field"><label for="r-cat">Catégorie</label><select class="inp" id="r-cat"><option value="">Non catégorisé</option>${catOptions(null,src.catId?`${src.catId}|${src.subId||""}`:"")}</select></div>
+    <div class="field"><label for="r-mode">Mode de paiement</label><select class="inp" id="r-mode">${modeOptions(src.mode||"")}</select></div>
     <div class="field"><label for="r-freq">Fréquence</label><select class="inp" id="r-freq">${FREQS.map(f=>`<option value="${f[0]}" ${(src.freq||"M")===f[0]?"selected":""}>${f[1]}</option>`).join("")}</select></div>
     <div class="field"><label for="r-next">Prochaine échéance</label><input class="inp" type="date" id="r-next" required value="${src.next||today()}"></div>
     <div class="field full"><label for="r-note">Note</label><input class="inp" id="r-note" value="${esc(src.note||"")}" placeholder="Facultatif"></div>
@@ -1038,17 +1043,24 @@ function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const 
      const amt=parseAmount(document.getElementById("r-amt").value)||0;const next=document.getElementById("r-next").value;if(!next){toast("Choisis la prochaine échéance.");return}
      const [catId,subId]=(fc.value||"|").split("|");
      const o={label,amount:mode==="dep"?-Math.abs(amt):Math.abs(amt),accountId:document.getElementById("r-acc").value,payee:pf.value.trim(),catId:catId||null,subId:subId||null,
-       freq:document.getElementById("r-freq").value,next,day:+next.slice(8,10),note:document.getElementById("r-note").value.trim(),active:r?document.getElementById("r-active").checked:true};
+       freq:document.getElementById("r-freq").value,next,day:+next.slice(8,10),note:document.getElementById("r-note").value.trim(),mode:document.getElementById("r-mode").value,active:r?document.getElementById("r-active").checked:true};
      if(r)Object.assign(r,o);else S.recurring.push({id:uid(),...o});closeSheet();commit();toast(r?"Récurrente modifiée":"Récurrente créée")};
    document.getElementById("saveRec").onclick=save;document.getElementById("recf").onsubmit=e=>{e.preventDefault();save()};
    const d=document.getElementById("delRec");if(d)d.onclick=()=>confirmSheet(`Supprimer « ${r.label} » ?`,"Les opérations déjà saisies restent dans tes comptes.","Supprimer",()=>{S.recurring=S.recurring.filter(x=>x!==r);commit();toast("Récurrente supprimée")})};
   draw()}
 function recDo(id){const r=S.recurring.find(x=>x.id===id);if(!r)return;
-  txSheet(null,r.amount>0?"rev":"dep",{accountId:r.accountId,date:r.next,payee:r.payee||r.label,amount:r.amount,catId:r.catId,subId:r.subId,note:r.note||"",recId:r.id})}
+  txSheet(null,r.amount>0?"rev":"dep",{accountId:r.accountId,date:r.next,payee:r.payee||r.label,amount:r.amount,catId:r.catId,subId:r.subId,note:r.note||"",mode:r.mode||"",recId:r.id})}
 function upcomingCard(){const l=upcoming(7);if(!S.recurring.some(r=>r.active))return"";
   return`<section class="panel" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">À venir</h2><button class="link" data-view="rec">Voir l'échéancier</button></div>
    ${l.length?l.map(recRow).join(""):'<div class="cat" style="padding:6px 0">Aucune échéance dans les 7 prochains jours.</div>'}</section>`}
 
+
+/* modes de paiement (liste reprise du classeur PognonPILOT) */
+const PAY_MODES=[["Carte","card",0],["Carte cadeaux","gift",6],["Chèque","doc",4],["Prélèvement","repeat",3],["Rapprochement relevé","check",2],["Remise de chèque","upload",5],["Retrait","coins",4],["Virement","transfer",7]];
+const modeInfo=m=>PAY_MODES.find(x=>x[0]===m)||[m,"tag",7];
+const modeOptions=sel=>`<option value="">— Non renseigné</option>${PAY_MODES.map(([m])=>`<option ${m===sel?"selected":""}>${m}</option>`).join("")}${sel&&!PAY_MODES.some(x=>x[0]===sel)?`<option selected>${esc(sel)}</option>`:""}`;
+const modeTag=m=>{const i=modeInfo(m);return`<span class="mtag t${i[2]}">${pillIco(i[1])}${esc(m)}</span>`};
+function payeeDefaultMode(name){const lo=name.toLowerCase(),c={};S.tx.forEach(t=>{if(!t.transferId&&t.mode&&(t.payee||"").toLowerCase()===lo)c[t.mode]=(c[t.mode]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||""}
 /* liste déroulante des tiers (remplace la suggestion native, peu fiable sur Android) */
 function popularPayees(){const cnt={};S.tx.forEach(t=>{if(!t.transferId&&t.payee)cnt[t.payee]=(cnt[t.payee]||0)+1});
   return payeeNames().slice().sort((a,b)=>(cnt[b]||0)-(cnt[a]||0)||a.localeCompare(b,"fr"))}
@@ -1095,37 +1107,39 @@ function txSheet(id,presetMode,pre){
      ${isV?`<div class="field"><label for="f-to">Vers le compte</label><select class="inp" id="f-to">${accOptions(to?to.accountId:S.accounts.find(a=>a.id!==defAcc)?.id)}</select></div>`:`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${tv?tv.date:today()}" required></div>`}
      ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required></div>`}
      ${isV?"":`<div class="field ${isV?"":""}"><label for="f-cat">Catégorie</label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,tv?`${tv.catId||""}|${tv.subId||""}`:"")}</select></div>`}
+     <div class="field"><label for="f-mode">Mode de paiement</label><select class="inp" id="f-mode">${modeOptions(tv&&tv.mode!=null?tv.mode:(isV?"Virement":""))}</select></div>
      <div class="field"><label for="f-st">Statut</label><select class="inp" id="f-st"><option value="">Non rapprochée</option><option value="R" ${(base?.status)==="R"?"selected":""}>Rapprochée (R)</option></select></div>
      <div class="field full"><label for="f-note">Note</label><input class="inp" id="f-note" value="${esc(base?.note||"")}" placeholder="Facultatif"></div>
     </form>
     <div class="actions"><div class="row">${t?'<button class="btn danger" id="delTx">Supprimer</button>':""}${t&&!t.transferId?'<button class="btn" id="mkRec">'+pillIco("calendar")+'Rendre récurrente</button>':""}</div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
     modal.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;draw()});
-    const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");attachPayeePicker(pf);let autoCat=!tv;
+    const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");attachPayeePicker(pf);
+    const fm=document.getElementById("f-mode");if(pf&&fm)pf.addEventListener("input",()=>{if(fm.value)return;const m=payeeDefaultMode(pf.value.trim());if(m){fm.value=m;fm.classList.add("prefill");setTimeout(()=>fm.classList.remove("prefill"),900)}});let autoCat=!tv;
     if(pf&&fcEl){fcEl.addEventListener("change",()=>{autoCat=false});pf.addEventListener("input",()=>{if(!autoCat&&fcEl.value)return;const k=payeeDefaultCat(pf.value.trim());
       if(k&&[...fcEl.options].some(o=>o.value===k)){fcEl.value=k;autoCat=true;fcEl.classList.add("prefill");setTimeout(()=>fcEl.classList.remove("prefill"),900)}})}
     const save=()=>{
       const amt=parseAmount(document.getElementById("f-amt").value);
       if(!(amt>0)){toast("Indique un montant supérieur à zéro.");return}
-      const acc=document.getElementById("f-acc").value,date=document.getElementById("f-date").value,st=document.getElementById("f-st").value,note=document.getElementById("f-note").value.trim();
+      const pm=document.getElementById("f-mode").value,acc=document.getElementById("f-acc").value,date=document.getElementById("f-date").value,st=document.getElementById("f-st").value,note=document.getElementById("f-note").value.trim();
       if(!date){toast("Choisis une date.");return}
       // on retire l'ancienne version (et sa jambe de virement)
       if(t){const tid=t.transferId;S.tx=S.tx.filter(x=>x.id!==t.id&&!(tid&&x.transferId===tid))}
       if(mode==="vir"){
         const dest=document.getElementById("f-to").value;if(dest===acc){toast("Choisis deux comptes différents.");return}
         const tid=uid(),A=accById(acc).name,B=accById(dest).name;
-        S.tx.push({id:uid(),accountId:acc,date,payee:`Virement vers ${B}`,amount:-amt,transferId:tid,status:st,note});
-        S.tx.push({id:uid(),accountId:dest,date,payee:`Virement depuis ${A}`,amount:amt,transferId:tid,status:st,note});
+        S.tx.push({id:uid(),accountId:acc,date,payee:`Virement vers ${B}`,amount:-amt,transferId:tid,status:st,note,mode:pm});
+        S.tx.push({id:uid(),accountId:dest,date,payee:`Virement depuis ${A}`,amount:amt,transferId:tid,status:st,note,mode:pm});
       }else{
         const [catId,subId]=(document.getElementById("f-cat").value||"|").split("|");
         const pn=document.getElementById("f-payee").value.trim()||"Sans tiers";if(S.payees&&!S.payees.some(p=>p.name.toLowerCase()===pn.toLowerCase()))S.payees.push({id:uid(),name:pn,type:"",active:true});
-        S.tx.push({id:t?t.id:uid(),accountId:acc,date,payee:pn,amount:mode==="dep"?-amt:amt,catId:catId||null,subId:subId||null,status:st,note});
+        S.tx.push({id:t?t.id:uid(),accountId:acc,date,payee:pn,amount:mode==="dep"?-amt:amt,catId:catId||null,subId:subId||null,status:st,note,mode:pm});
       }
       const wasRec=recPending;if(wasRec)advanceRec(wasRec);
       closeSheet();commit();toast(t?"Opération modifiée":wasRec?"Échéance saisie, la suivante est programmée":"Opération ajoutée");
     };
     document.getElementById("saveTx").onclick=save;
     document.getElementById("txf").onsubmit=e=>{e.preventDefault();save()};
-    const mk=document.getElementById("mkRec");if(mk)mk.onclick=()=>recSheet(null,{label:t.payee,payee:t.payee,amount:t.amount,accountId:t.accountId,catId:t.catId,subId:t.subId,freq:"M",next:addFreq(t.date,"M"),note:t.note});
+    const mk=document.getElementById("mkRec");if(mk)mk.onclick=()=>recSheet(null,{label:t.payee,payee:t.payee,amount:t.amount,accountId:t.accountId,catId:t.catId,subId:t.subId,freq:"M",next:addFreq(t.date,"M"),note:t.note,mode:t.mode||""});
     const del=document.getElementById("delTx");if(del)del.onclick=()=>confirmSheet("Supprimer l'opération ?",t.transferId?"Les deux côtés du virement seront supprimés.":"Cette opération sera retirée du registre.","Supprimer",()=>{S.tx=S.tx.filter(x=>x.id!==t.id&&!(t.transferId&&x.transferId===t.transferId));commit();toast("Opération supprimée")});
   };
   if(!S.accounts.length){toast("Crée d'abord un compte.");return}
@@ -1179,7 +1193,7 @@ async function handleImport(file){
   let hi=rows.findIndex(r=>r.filter(x=>String(x).trim()).length>=3);if(hi<0)hi=0;
   const head=rows[hi].map((h,i)=>String(h).trim()||`Colonne ${i+1}`),data=rows.slice(hi+1);
   const guess=re=>{const i=head.findIndex(h=>re.test(h.toLowerCase()));return i<0?"":String(i)};
-  const g={date:guess(/date/),payee:guess(/libell|tiers|descr|bénéf|benef|payee|intitul/),amt:guess(/^montant|amount|^valeur/),deb:guess(/débit|debit/),cred:guess(/crédit|credit/),cat:guess(/cat[ée]g/),sub:guess(/sous/)};
+  const g={date:guess(/date/),payee:guess(/libell|tiers|descr|bénéf|benef|payee|intitul/),amt:guess(/^montant|amount|^valeur/),deb:guess(/débit|debit/),cred:guess(/crédit|credit/),cat:guess(/cat[ée]g/),sub:guess(/sous/),mode:guess(/mode|paiement|moyen/)};
   if(g.cat===g.sub)g.cat=guess(/^cat[ée]g/);
   const opt=sel=>`<option value="">—</option>`+head.map((h,i)=>`<option value="${i}" ${String(i)===sel?"selected":""}>${esc(h)}</option>`).join("");
   openSheet(`<h2>Importer « ${esc(file.name)} »</h2><p style="color:var(--muted);margin:-6px 0 14px">${data.length} lignes détectées. Vérifie les colonnes proposées.</p>
@@ -1190,21 +1204,22 @@ async function handleImport(file){
    <div class="field"><label for="i-cat">Catégorie</label><select class="inp" id="i-cat">${opt(g.cat)}</select></div>
    <div class="field"><label for="i-deb">ou Débit</label><select class="inp" id="i-deb">${opt(g.amt?"":g.deb)}</select></div>
    <div class="field"><label for="i-cred">et Crédit</label><select class="inp" id="i-cred">${opt(g.amt?"":g.cred)}</select></div>
-   <div class="field full"><label for="i-sub">Sous-catégorie</label><select class="inp" id="i-sub">${opt(g.sub)}</select></div></div>
+   <div class="field"><label for="i-sub">Sous-catégorie</label><select class="inp" id="i-sub">${opt(g.sub)}</select></div>
+   <div class="field"><label for="i-mode">Mode de paiement</label><select class="inp" id="i-mode">${opt(g.mode)}</select></div></div>
   <div class="field" style="margin-top:14px"><label>Aperçu</label><div class="preview" id="i-prev"></div></div>
   <div class="actions"><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="doImport">Importer</button></div></div>`);
   const get=id=>document.getElementById(id).value;
-  const build=()=>{const c={date:get("i-date"),payee:get("i-payee"),amt:get("i-amt"),deb:get("i-deb"),cred:get("i-cred"),cat:get("i-cat"),sub:get("i-sub")};
+  const build=()=>{const c={date:get("i-date"),payee:get("i-payee"),amt:get("i-amt"),deb:get("i-deb"),cred:get("i-cred"),cat:get("i-cat"),sub:get("i-sub"),mode:get("i-mode")};
     return data.map(r=>{const date=parseDate(r[c.date]);let amount;
       if(c.amt!=="")amount=parseAmount(r[c.amt]);else{const d=parseAmount(r[c.deb]),k=parseAmount(r[c.cred]);amount=(isNaN(k)?0:Math.abs(k))-(isNaN(d)?0:Math.abs(d));if(isNaN(d)&&isNaN(k))amount=NaN}
-      return{date,payee:c.payee!==""?String(r[c.payee]).trim():"",amount,cat:c.cat!==""?String(r[c.cat]).trim():"",sub:c.sub!==""?String(r[c.sub]).trim():""}}).filter(x=>x.date&&!isNaN(x.amount)&&x.amount!==0)};
+      return{date,payee:c.payee!==""?String(r[c.payee]).trim():"",amount,cat:c.cat!==""?String(r[c.cat]).trim():"",sub:c.sub!==""?String(r[c.sub]).trim():"",mode:c.mode!==""?String(r[c.mode]).trim():""}}).filter(x=>x.date&&!isNaN(x.amount)&&x.amount!==0)};
   const prev=()=>{const l=build();document.getElementById("i-prev").innerHTML=l.length?`<table><thead><tr><th>Date</th><th>Libellé</th><th class="r">Montant</th><th>Catégorie</th></tr></thead><tbody>${l.slice(0,5).map(x=>`<tr><td class="num">${fdate(x.date)}</td><td>${esc(x.payee)}</td><td class="r num ${x.amount<0?"neg":"pos"}">${fmt(x.amount)}</td><td>${esc([x.cat,x.sub].filter(Boolean).join(" › "))}</td></tr>`).join("")}</tbody></table><div class="cat" style="padding:8px 10px">${l.length} opérations valides</div>`:`<div class="empty">Aucune ligne valide avec ces colonnes : il faut au moins une date et un montant.</div>`};
   modal.querySelectorAll("select").forEach(s=>s.onchange=prev);prev();
   document.getElementById("doImport").onclick=()=>{
     const acc=get("i-acc"),l=build();if(!l.length){toast("Rien à importer avec ces colonnes.");return}
     const key=t=>`${t.accountId}|${t.date}|${t.amount.toFixed(2)}|${(t.payee||"").toLowerCase()}`;const seen=new Set(S.tx.map(key));
     let n=0,dup=0,newCats=0;
-    l.forEach(x=>{const t={id:uid(),accountId:acc,date:x.date,payee:x.payee||"Sans libellé",amount:Math.round(x.amount*100)/100,catId:null,subId:null,status:"",note:""};
+    l.forEach(x=>{const t={id:uid(),accountId:acc,date:x.date,payee:x.payee||"Sans libellé",amount:Math.round(x.amount*100)/100,catId:null,subId:null,status:"",note:"",mode:(PAY_MODES.find(m=>norm(m[0])===norm(x.mode))||[x.mode||""])[0]};
       if(seen.has(key(t))){dup++;return}seen.add(key(t));
       let cn=x.cat,sn=x.sub;if(cn&&!sn){const p=cn.split(/\s*(?:›|>|:)\s*/);if(p.length>1){cn=p[0];sn=p.slice(1).join(" ")}}
       if(cn){let c=S.categories.find(c=>c.name.toLowerCase()===cn.toLowerCase());if(!c){c={id:uid(),name:cn,subs:[],...guessIcon(cn,S.categories.length)};S.categories.push(c);newCats++}
@@ -1221,9 +1236,9 @@ async function offerFile(filename,data,mime){
   const blob=data instanceof Blob?data:new Blob([data],{type:mime});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return true;
 }
 function exportRows(){return sorted(S.tx).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
-  return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,Statut:t.status==="R"?"R":"",Note:t.note||""}})}
+  return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="12";
+const APP_VERSION="13";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
@@ -1331,7 +1346,7 @@ document.addEventListener("click",async e=>{
     case"reppdf":el.disabled=true;await exportPdf();el.disabled=false;break;
     case"repxlsx":{if(!window.XLSX){toast("Le module Excel n'a pas pu se charger.");break}
       const {r,rows,b}=repData(),gl=glab(),wb=XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rep.group==="all"?rows.map(t=>({Date:fdate(t.date),Tiers:t.payee,Catégorie:catLabel(t),Compte:accById(t.accountId)?.name||"",Montant:r2(t.amount)}))
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rep.group==="all"?rows.map(t=>({Date:fdate(t.date),Tiers:t.payee,Catégorie:catLabel(t),Compte:accById(t.accountId)?.name||"",Montant:r2(t.amount),"Mode de paiement":t.mode||""}))
         :rows.map(x=>({[gl]:x.name,Revenus:r2(x.rev),Dépenses:r2(x.dep),Net:r2(x.net)}))),rep.group==="all"?"Opérations":"Répartition");
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(b.map(x=>({Période:x.label,Revenus:r2(x.rev),Dépenses:r2(x.dep),Net:r2(x.rev-x.dep)}))),"Évolution");
       const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
@@ -1355,7 +1370,7 @@ document.addEventListener("click",async e=>{
       const wb=XLSX.utils.book_new();const ws=XLSX.utils.json_to_sheet(exportRows());ws["!cols"]=[{wch:11},{wch:18},{wch:30},{wch:16},{wch:18},{wch:12},{wch:12},{wch:24}];
       XLSX.utils.book_append_sheet(wb,ws,"Opérations");
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.accounts.map(a=>({Compte:a.name,Établissement:a.bank||"",Type:a.type,État:a.closed?"Clôturé":"Actif","Date d'ouverture":a.opened?fdate(a.opened):"","Solde initial":a.initial,Solde:Math.round(balance(a.id)*100)/100,"Solde rapproché":Math.round(balance(a.id,true)*100)/100}))),"Comptes");
-      if(S.recurring.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.recurring.map(r=>({Libellé:r.label,Tiers:r.payee||"",Compte:accById(r.accountId)?.name||"",Catégorie:catLabel({catId:r.catId,subId:r.subId}),Montant:r.amount,Fréquence:freqLabel(r.freq),"Prochaine échéance":fdate(r.next),Active:r.active?"Oui":"Non"}))),"Échéancier");
+      if(S.recurring.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.recurring.map(r=>({Libellé:r.label,Tiers:r.payee||"",Compte:accById(r.accountId)?.name||"",Catégorie:catLabel({catId:r.catId,subId:r.subId}),Montant:r.amount,Fréquence:freqLabel(r.freq),"Mode de paiement":r.mode||"","Prochaine échéance":fdate(r.next),Active:r.active?"Oui":"Non"}))),"Échéancier");
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.categories.flatMap(c=>[{Catégorie:c.name,"Sous-catégorie":""},...c.subs.map(s=>({Catégorie:c.name,"Sous-catégorie":s.name}))])),"Catégories");
       const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
       if(await offerFile(`pognonpilot-${today()}.xlsx`,new Blob([buf]),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))toast("Export Excel prêt");break}
