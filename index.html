@@ -319,6 +319,19 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .mlab{display:inline-flex!important;align-items:center;gap:10px}.mlab .ico{width:30px;height:30px;border-radius:9px}.mlab .ico svg{width:15px;height:15px}
 .regsum>div{gap:2px}
 .regsum .khead{flex-direction:row!important;align-items:center}
+
+.recrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px 14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.recrow:last-child{border-bottom:0}.recrow.off{opacity:.6}
+.rectx{all:unset;cursor:pointer;min-width:0;display:flex;flex-direction:column}.rectx b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rectx span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rectx:hover b{color:var(--accent)}.rectx:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.recright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}.recamt{font-weight:700}
+.recact{display:flex;gap:6px}.recact .pi{width:15px;height:15px}
+.due{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.due.dlate{background:var(--t1b);color:var(--t1f)}.due.dsoon{background:var(--t4b);color:var(--t4f)}.due.dweek{background:var(--t0b);color:var(--t0f)}.due.dlater{background:var(--surface-2);color:var(--muted)}
+.recgrp{margin-bottom:16px}.recgrp h2{margin-bottom:4px}
+.actions>.row:first-child{margin-left:0}
+#mkRec .pi{width:15px;height:15px}
+@media (max-width:820px){.recrow{grid-template-columns:auto minmax(0,1fr) auto}.recact{grid-column:1/-1;justify-content:flex-end}.nav{font-size:10.5px!important;padding:7px 1px!important}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}}}
 </style>
 
@@ -329,6 +342,7 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
     <div class="brand"><i>₱</i>PognonPILOT</div>
     <button class="nav" data-view="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 7h6V4h-6z"/></svg>Accueil</button>
     <button class="nav" data-view="reg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg>Opérations</button>
+    <button class="nav" data-view="rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M9 15l2 2 4-4"/></svg>Échéancier</button>
     <button class="nav" data-view="acc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-6 9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18"/></svg>Comptes</button>
     <button class="nav" data-view="rep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-8M11 20V5M17 20v-5M3 20h18"/></svg>Rapports</button>
     <button class="nav" data-view="cat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h7v7H4zM15 4l5 5-5 5-5-5zM4 18h16"/></svg>Catégories</button>
@@ -350,7 +364,7 @@ const KEY="pognonpilot.v1";
 const TYPES=["Courant","Épargne","Placements","Collection"];
 const TYPE_HINT={"Courant":"Comptes de tous les jours et cartes","Épargne":"Livrets et comptes d'épargne","Placements":"Assurance-vie, PEA, titres","Collection":"Valeur des objets de collection"};
 const OLD_TYPES={"Compte courant":"Courant","Carte de crédit":"Courant","Espèces":"Courant","Prêt":"Courant","Livret / Épargne":"Épargne","Placement":"Placements"};
-function migrate(d){d.accounts.forEach(a=>{if(!TYPES.includes(a.type))a.type=OLD_TYPES[a.type]||"Courant"});d.tx.forEach(t=>{if(t.status!=="R")t.status=""});d.categories.forEach(c=>delete c.kind);ensureIcons(d);return d}
+function migrate(d){d.accounts.forEach(a=>{if(!TYPES.includes(a.type))a.type=OLD_TYPES[a.type]||"Courant"});d.tx.forEach(t=>{if(t.status!=="R")t.status=""});d.categories.forEach(c=>delete c.kind);ensureIcons(d);if(!Array.isArray(d.recurring))d.recurring=[];return d}
 const COLORS=["#0B6E5A","#2F5DA8","#C0632F","#7A4FA0","#A3842A","#3E7F94","#B04A6B","#5B6770"];
 const eur=new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"});
 const fmt=n=>eur.format(Math.round(n*100)/100);
@@ -407,7 +421,7 @@ const PP_CATS=[{"id":"g0","name":"Alimentation","subs":[{"id":"g0_0","name":"Cou
 const PP_ACCS=[];
 const PP_PAYEES=[];
 const clone=o=>JSON.parse(JSON.stringify(o));
-function fresh(){return ensureIcons({version:1,sample:false,init:"pp31",accounts:clone(PP_ACCS),categories:clone(PP_CATS),payees:clone(PP_PAYEES),tx:[]})}
+function fresh(){return ensureIcons({version:1,sample:false,init:"pp31",accounts:clone(PP_ACCS),categories:clone(PP_CATS),payees:clone(PP_PAYEES),recurring:[],tx:[]})}
 function upgrade(d){if(d.init==="pp30"){const names=new Set(d.accounts.map(a=>a.name));clone(PP_ACCS).forEach(a=>{if(!names.has(a.name))d.accounts.push(a)});d.payees=d.payees&&d.payees.length?d.payees:clone(PP_PAYEES);d.init="pp31"}if(!d.payees)d.payees=[];return d}
 function blank(){const s=sample();return{version:1,sample:false,accounts:[{id:uid(),name:"Compte courant",type:"Courant",initial:0,color:COLORS[0]}],categories:s.categories,tx:[]}}
 
@@ -418,6 +432,7 @@ function commit(){dirty=true;cache();render();scheduleAutoSave()}
 
 /* ---------- calculs ---------- */
 const active=()=>S.accounts.filter(a=>!a.closed);
+const defaultAcc=()=>{const l=active();const c=l.filter(a=>a.type==="Courant");return(c.find(a=>/C\.C\.P|COURANT/i.test(a.name))||c[0]||l[0]||S.accounts[0])?.id};
 const accById=id=>S.accounts.find(a=>a.id===id);
 const catLabel=t=>{if(t.transferId)return"Virement";const c=S.categories.find(c=>c.id===t.catId);if(!c)return"Non catégorisé";const s=c.subs.find(s=>s.id===t.subId);return s?`${c.name} › ${s.name}`:c.name};
 const payeeNames=()=>[...new Set([...(S.payees||[]).filter(p=>p.active).map(p=>p.name),...S.tx.filter(t=>!t.transferId).map(t=>t.payee)])].sort((a,b)=>a.localeCompare(b,"fr"));
@@ -561,7 +576,7 @@ function renderChip(){
 function render(){
   document.querySelectorAll(".nav").forEach(b=>b.setAttribute("aria-current",b.dataset.view===view?"page":"false"));
   renderChip();
-  ({dash:renderDash,reg:renderReg,acc:renderAcc,rep:renderRep,cat:renderCat,file:renderFile})[view]();
+  ({dash:renderDash,reg:renderReg,rec:renderRec,acc:renderAcc,rep:renderRep,cat:renderCat,file:renderFile})[view]();
 }
 const banner=()=>fileBanner()+(S.sample?`<div class="banner"><span><b>Données d'exemple.</b> Explore librement, puis pars d'un fichier vierge pour saisir tes vrais comptes.</span><button class="btn small" data-act="reset">Commencer avec mes comptes</button></div>`:"");
 
@@ -605,6 +620,7 @@ function renderDash(){
     <div class="cat">Taux d'épargne <b style="color:var(--fg)">${inc>0?((inc-dep)/inc*100).toLocaleString("fr-FR",{maximumFractionDigits:1})+" %":"—"}</b> · ${pend} opération${pend>1?"s":""} à rapprocher</div></section>
   </div>
   <div class="quick">${Q("dep",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>',"Dépense")}${Q("rev",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',"Revenu")}${Q("vir",svgIco("transfer"),"Virement")}${Q("rep",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-8M11 20V5M17 20v-5M3 20h18"/></svg>',"Rapports")}</div>
+  ${upcomingCard()}
   ${cards.length?`<div class="accgrid">${cards.map(a=>{const b=balance(a.id);return`<button class="acard" data-accfiche="${a.id}"><span class="top"><span class="ini" style="background:${a.color}">${esc((a.bank||a.name)[0]||"?")}</span><span class="ty">${esc(a.type)}</span></span><span><span class="nm" style="display:block">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></span></button>`}).join("")}</div>`:""}
   <div class="dgrid">
    <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="margin:0">Où part l'argent</h2><span class="cat">${now.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</span></div>
@@ -691,6 +707,9 @@ function accFiche(id){const a=accById(id);if(!a)return;const b=balance(a.id),ym=
    <div class="fichebal"><div>${kh("wallet",0,"Solde")}<b class="num ${b<0?"neg":""}">${fmt(b)}</b></div><div>${kh("check",0,"Rapproché")}<b class="num">${fmt(balance(id,true))}</b></div></div>
    <div class="eyebrow" style="margin:14px 0 4px">Solde sur 12 mois</div>${curve(pts,480,110,"var(--accent)")}
    <div class="fichebal" style="margin-top:12px"><div>${kh("up",2,"Entrées ce mois")}<b class="num pos">+${fmt(inn)}</b></div><div>${kh("down",1,"Sorties ce mois")}<b class="num">${out?"−":""}${fmt(out)}</b></div></div>
+   ${(()=>{const up=upcoming(30,id);if(!up.length)return"";const prev=b+up.reduce((s,r)=>{let n=r.next,k=0,t=0;while(daysTo(n)<=30&&k++<60){t+=r.amount;n=addFreq(n,r.freq,r.day)}return s+t},0);
+     return`<div class="fichebal" style="margin-top:12px"><div style="grid-column:1/-1">${kh("calendar",1,"Solde prévisionnel à 30 jours")}<b class="num ${prev<0?"neg":""}">${fmt(prev)}</b><span class="cat">après ${up.length} échéance${up.length>1?"s":""} à venir</span></div></div>
+     <div class="eyebrow" style="margin:16px 0 2px">Prochaines échéances</div>${up.slice(0,3).map(recRow).join("")}`})()}
    <div class="eyebrow" style="margin:16px 0 2px">Dernières opérations</div>${last.length?last.map(opRow).join(""):'<div class="cat" style="padding:8px 0">Aucune opération sur ce compte.</div>'}
    <div class="actions"><button class="btn" data-editacc="${a.id}">Modifier</button><div class="row"><button class="btn" data-open="${a.id}">Voir le registre</button>${a.closed?"":`<button class="btn primary" data-txfor="${a.id}">+ Opération</button>`}</div></div>`)}
 let payQ="";
@@ -745,7 +764,7 @@ function fileStatus(){const linked=fileHandle&&fileState!=="none";const st=fileS
   const stat=(n,l,ic,t)=>`<div>${kic(ic,t)}<b class="num">${n.toLocaleString("fr-FR")}</b><span>${l}</span></div>`;
   return`<section class="fstatus"><div class="fhead"><span class="ico lg ${st[0]==="ok"?"t2":st[0]==="warn"?"t4":"t7"}">${svgIco("doc")}</span><div style="min-width:0"><b class="ftitle">${st[1]}</b>
    <div class="cat">${linked?esc(fileHandle.name)+" · ":""}dernier enregistrement : ${when}</div></div><button class="btn" data-act="backup">Sauvegarder une copie datée</button></div>
-   <div class="fstats">${stat(active().length,"comptes actifs","bank",0)}${stat(S.tx.length,"opérations","list",3)}${stat(S.categories.length,"catégories","tag",4)}${stat((S.payees||[]).length,"tiers","user",6)}</div>
+   <div class="fstats">${stat(active().length,"comptes actifs","bank",0)}${stat(S.tx.length,"opérations","list",3)}${stat(S.categories.length,"catégories","tag",4)}${stat((S.payees||[]).length,"tiers","user",6)}${stat((S.recurring||[]).length,"récurrentes","calendar",1)}</div>
    ${ds.length?`<div class="cat">Historique du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</div>`:""}</section>`}
 function renderFile(){
   main.innerHTML=`${banner()}<div class="head"><div><div class="eyebrow">Données</div><h1>Fichiers</h1></div></div>
@@ -949,48 +968,112 @@ async function exportPdf(){
 
 
 /* icône devant chaque titre de carte */
-const TITLE_ICONS=[[/^EVOLUTION/,"trend",0],[/REPARTITION|OU PART/,"pie",3],[/DERNIERES OPERATIONS/,"list",0],[/REVENUS ET DEPENSES/,"bars",2],
+const TITLE_ICONS=[[/^A VENIR|ECHEANCES|EN RETARD|CETTE SEMAINE|CE MOIS-CI|PLUS TARD|INACTIVES/,"calendar",1],[/^EVOLUTION/,"trend",0],[/REPARTITION|OU PART/,"pie",3],[/DERNIERES OPERATIONS/,"list",0],[/REVENUS ET DEPENSES/,"bars",2],
  [/^COURANT/,"wallet",0],[/^EPARGNE/,"piggy",2],[/^PLACEMENTS/,"trend",3],[/^COLLECTION/,"cube",4],[/MES COMPTES|^COMPTES/,"bank",0],
  [/^(JANVIER|FEVRIER|MARS|AVRIL|MAI|JUIN|JUILLET|AOUT|SEPTEMBRE|OCTOBRE|NOVEMBRE|DECEMBRE)/,"calendar",4],
  [/FICHIER DE DONNEES/,"doc",0],[/^IMPORTER/,"upload",5],[/^EXPORTER/,"download",2],[/INSTALLER/,"phone",3]];
-const PAGE_ICONS={dash:["home",0],reg:["list",3],acc:["bank",2],rep:["bars",4],cat:["tag",6],file:["doc",5]};
+const PAGE_ICONS={rec:["calendar",1],dash:["home",0],reg:["list",3],acc:["bank",2],rep:["bars",4],cat:["tag",6],file:["doc",5]};
 function decorateTitles(root){
   document.querySelectorAll("#main .head>div:first-child:not([data-i])").forEach(d=>{const h=d.querySelector("h1");if(!h)return;d.dataset.i="1";
     const m=h.id==="tiers"?["user",1]:PAGE_ICONS[view]||["tag",0];d.classList.add("hhead");d.insertAdjacentHTML("afterbegin",`<span class="ico pg t${m[1]}">${svgIco(m[0])}</span>`)});(root||document).querySelectorAll("#main h2:not([data-i])").forEach(h=>{h.dataset.i="1";const n=norm(h.textContent.trim());
   const m=TITLE_ICONS.find(([re])=>re.test(n));if(!m)return;h.classList.add("h2i");h.insertAdjacentHTML("afterbegin",`<span class="ico sm t${m[2]}">${svgIco(m[1])}</span>`)})}
 new MutationObserver(()=>decorateTitles()).observe(document.getElementById("main"),{childList:true,subtree:true});
+
+/* ---------- échéancier (opérations récurrentes, saisie manuelle) ---------- */
+const FREQS=[["W","Hebdomadaire",0,7],["M","Mensuelle",1],["B","Bimestrielle",2],["Q","Trimestrielle",3],["S","Semestrielle",6],["A","Annuelle",12]];
+const freqLabel=f=>(FREQS.find(x=>x[0]===f)||FREQS[1])[1];
+let recPending=null;
+function addFreq(dateIso,f,day){const fr=FREQS.find(x=>x[0]===f)||FREQS[1];const d=new Date(dateIso+"T12:00");
+  if(fr[0]==="W"){d.setDate(d.getDate()+7);return iso(d)}
+  const y=d.getFullYear(),m=d.getMonth()+fr[2],dd=day||d.getDate();const last=new Date(y,m+1,0).getDate();return iso(new Date(y,m,Math.min(dd,last)))}
+const daysTo=dIso=>Math.round((new Date(dIso+"T12:00")-new Date(today()+"T12:00"))/864e5);
+function dueInfo(r){const n=daysTo(r.next);if(n<0)return{cls:"dlate",txt:`En retard de ${-n} j`,grp:0};if(n===0)return{cls:"dsoon",txt:"Aujourd'hui",grp:1};
+  if(n<=3)return{cls:"dsoon",txt:n===1?"Demain":`Dans ${n} jours`,grp:1};if(n<=7)return{cls:"dweek",txt:`Dans ${n} jours`,grp:1};
+  if(n<=30)return{cls:"dlater",txt:`Dans ${n} jours`,grp:2};return{cls:"dlater",txt:fdate(r.next),grp:3}}
+const recBadge=r=>{const c=r.catId&&S.categories.find(x=>x.id===r.catId);if(!c)return`<span class="ico t7">${svgIco("calendar")}</span>`;const sb=c.subs.find(x=>x.id===r.subId);return`<span class="ico t${c.tint}">${svgIco(subIcon(sb,c))}</span>`};
+function advanceRec(id){const r=S.recurring.find(x=>x.id===id);if(!r)return;r.next=addFreq(r.next,r.freq,r.day);r.last=today()}
+function upcoming(days,accId){return S.recurring.filter(r=>r.active&&(!accId||r.accountId===accId)&&daysTo(r.next)<=days).sort((a,b)=>a.next<b.next?-1:1)}
+function recRow(r){const d=dueInfo(r),a=accById(r.accountId);
+  return`<div class="recrow ${r.active?"":"off"}">${recBadge(r)}<button class="rectx" data-recedit="${r.id}"><b>${esc(r.label)}</b><span>${esc([r.payee,a?a.name:"",freqLabel(r.freq)].filter(Boolean).join(" · "))}</span></button>
+   <span class="recright"><span class="num recamt ${r.amount>0?"pos":""}">${r.amount>0?"+":""}${fmt(r.amount)}</span>${r.active?`<span class="due ${d.cls}">${d.txt}</span>`:'<span class="due dlater">Inactive</span>'}</span>
+   ${r.active?`<span class="recact"><button class="btn small primary" data-recdo="${r.id}">${pillIco("check")}Saisir</button><button class="btn small" data-recskip="${r.id}" title="Passer cette échéance sans créer d'opération">Passer</button></span>`:""}</div>`}
+function renderRec(){const act=S.recurring.filter(r=>r.active),off=S.recurring.filter(r=>!r.active);
+  const in7=upcoming(7),late=act.filter(r=>daysTo(r.next)<0);const ym=today().slice(0,7);
+  let month=0;act.forEach(r=>{let n=r.next,g=0;while(n.slice(0,7)<=ym&&g++<60){if(n.slice(0,7)===ym)month+=r.amount;n=addFreq(n,r.freq,r.day)}});
+  const groups=[["En retard",0],["Cette semaine",1],["Ce mois-ci",2],["Plus tard",3]].map(([t,g])=>[t,act.filter(r=>dueInfo(r).grp===g).sort((a,b)=>a.next<b.next?-1:1)]).filter(x=>x[1].length);
+  main.innerHTML=`${banner()}<div class="head"><div><div class="eyebrow">${act.length} récurrente${act.length>1?"s":""} active${act.length>1?"s":""}</div><h1>Échéancier</h1></div><button class="btn primary" data-act="newrec" style="display:inline-flex">+ Nouvelle récurrente</button></div>
+  <p class="lede">Rappels de tes opérations régulières. Rien n'est ajouté à tes comptes tant que tu ne cliques pas sur « Saisir ».</p>
+  <div class="kpis num">
+   <div class="kpi">${kh("pending",1,"En retard")}<div class="v ${late.length?"neg":""}">${late.length}</div><span class="delta">échéance${late.length>1?"s":""} à traiter</span></div>
+   <div class="kpi">${kh("calendar",4,"7 prochains jours")}<div class="v">${in7.length}</div><span class="delta">${in7.length?"Total "+fmt(in7.reduce((s,r)=>s+r.amount,0)):"Rien de prévu"}</span></div>
+   <div class="kpi">${kh("scale",0,"Prévu ce mois-ci")}<div class="v ${month<0?"":"pos"}">${month>0?"+":""}${fmt(month)}</div><span class="delta">échéances du mois en cours</span></div>
+  </div>
+  ${act.length?groups.map(([t,l])=>`<section class="panel recgrp"><h2>${t}</h2>${l.map(recRow).join("")}</section>`).join(""):`<div class="panel empty"><p style="margin:0 auto">Aucune récurrente pour l'instant. Crée-en une avec « + Nouvelle récurrente » en haut de la page, ou depuis une opération existante avec « Rendre récurrente ».</p></div>`}
+  ${off.length?`<details class="panel" style="margin-top:16px"><summary><b>Récurrentes inactives</b> <span class="cat">· ${off.length}</span></summary><div style="margin-top:8px">${off.map(recRow).join("")}</div></details>`:""}`}
+function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const src=r||from||{};
+  let mode=(src.amount||-1)>0?"rev":"dep";const defAcc=src.accountId||(regAcc!=="all"?regAcc:defaultAcc());
+  const draw=()=>{openSheet(`<h2>${r?"Modifier la récurrente":"Nouvelle récurrente"}</h2>
+   <div class="seg" role="group" style="grid-template-columns:1fr 1fr"><button type="button" data-rmode="dep" aria-pressed="${mode==="dep"}">${pillIco("down")}Dépense</button><button type="button" data-rmode="rev" aria-pressed="${mode==="rev"}">${pillIco("up")}Revenu</button></div>
+   <form id="recf" class="form">
+    <div class="field full"><label for="r-label">Libellé</label><input class="inp" id="r-label" required value="${esc(src.label||src.payee||"")}" placeholder="Ex. Stockage Cloud"></div>
+    <div class="field"><label for="r-amt">Montant prévu (€)</label><input class="inp num" id="r-amt" inputmode="decimal" value="${src.amount?String(Math.abs(src.amount)).replace(".",","):""}" placeholder="0,00"></div>
+    <div class="field"><label for="r-acc">Compte</label><select class="inp" id="r-acc">${accOptions(defAcc)}</select></div>
+    <div class="field"><label for="r-payee">Tiers</label><input class="inp" id="r-payee" list="dl-rpayees" autocomplete="off" value="${esc(src.payee||"")}"><datalist id="dl-rpayees">${payeeNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>
+    <div class="field"><label for="r-cat">Catégorie</label><select class="inp" id="r-cat"><option value="">Non catégorisé</option>${catOptions(null,src.catId?`${src.catId}|${src.subId||""}`:"")}</select></div>
+    <div class="field"><label for="r-freq">Fréquence</label><select class="inp" id="r-freq">${FREQS.map(f=>`<option value="${f[0]}" ${(src.freq||"M")===f[0]?"selected":""}>${f[1]}</option>`).join("")}</select></div>
+    <div class="field"><label for="r-next">Prochaine échéance</label><input class="inp" type="date" id="r-next" required value="${src.next||today()}"></div>
+    <div class="field full"><label for="r-note">Note</label><input class="inp" id="r-note" value="${esc(src.note||"")}" placeholder="Facultatif"></div>
+    ${r?`<label class="cat full" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="r-active" ${r.active?"checked":""}> Récurrente active</label>`:""}
+   </form>
+   <div class="actions">${r?'<button class="btn danger" id="delRec">Supprimer</button>':""}<div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveRec">Enregistrer</button></div></div>`);
+   modal.querySelectorAll("[data-rmode]").forEach(b=>b.onclick=()=>{mode=b.dataset.rmode;draw()});
+   const pf=document.getElementById("r-payee"),fc=document.getElementById("r-cat");pf.addEventListener("input",()=>{if(fc.value)return;const k=payeeDefaultCat(pf.value.trim());if(k&&[...fc.options].some(o=>o.value===k))fc.value=k});
+   const save=()=>{const label=document.getElementById("r-label").value.trim();if(!label){toast("Donne un libellé à la récurrente.");return}
+     const amt=parseAmount(document.getElementById("r-amt").value)||0;const next=document.getElementById("r-next").value;if(!next){toast("Choisis la prochaine échéance.");return}
+     const [catId,subId]=(fc.value||"|").split("|");
+     const o={label,amount:mode==="dep"?-Math.abs(amt):Math.abs(amt),accountId:document.getElementById("r-acc").value,payee:pf.value.trim(),catId:catId||null,subId:subId||null,
+       freq:document.getElementById("r-freq").value,next,day:+next.slice(8,10),note:document.getElementById("r-note").value.trim(),active:r?document.getElementById("r-active").checked:true};
+     if(r)Object.assign(r,o);else S.recurring.push({id:uid(),...o});closeSheet();commit();toast(r?"Récurrente modifiée":"Récurrente créée")};
+   document.getElementById("saveRec").onclick=save;document.getElementById("recf").onsubmit=e=>{e.preventDefault();save()};
+   const d=document.getElementById("delRec");if(d)d.onclick=()=>confirmSheet(`Supprimer « ${r.label} » ?`,"Les opérations déjà saisies restent dans tes comptes.","Supprimer",()=>{S.recurring=S.recurring.filter(x=>x!==r);commit();toast("Récurrente supprimée")})};
+  draw()}
+function recDo(id){const r=S.recurring.find(x=>x.id===id);if(!r)return;
+  txSheet(null,r.amount>0?"rev":"dep",{accountId:r.accountId,date:r.next,payee:r.payee||r.label,amount:r.amount,catId:r.catId,subId:r.subId,note:r.note||"",recId:r.id})}
+function upcomingCard(){const l=upcoming(7);if(!S.recurring.some(r=>r.active))return"";
+  return`<section class="panel" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h2 style="margin:0">À venir</h2><button class="link" data-view="rec">Voir l'échéancier</button></div>
+   ${l.length?l.map(recRow).join(""):'<div class="cat" style="padding:6px 0">Aucune échéance dans les 7 prochains jours.</div>'}</section>`}
 /* ---------- fenêtres ---------- */
 const modal=document.getElementById("modal");
 function openSheet(html){modal.innerHTML=`<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;const f=modal.querySelector("input:not([type=hidden]),select");f&&f.focus()}
-function closeSheet(){modal.innerHTML=""}
+function closeSheet(){modal.innerHTML="";recPending=null}
 function confirmSheet(title,text,okLabel,onOk){openSheet(`<h2>${esc(title)}</h2><p style="color:var(--muted);margin:0">${esc(text)}</p><div class="actions"><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="okc">${esc(okLabel)}</button></div></div>`);document.getElementById("okc").onclick=()=>{closeSheet();onOk()}}
 function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 
 function catOptions(kind,sel){return S.categories.map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
 function accOptions(sel){return S.accounts.filter(a=>!a.closed||a.id===sel).map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)}</option>`).join("")}
 
-function txSheet(id,presetMode){
-  const t=id?S.tx.find(x=>x.id===id):null;
+function txSheet(id,presetMode,pre){
+  const t=id?S.tx.find(x=>x.id===id):null;const tv=t||pre||null;recPending=pre&&pre.recId||null;
   let pair=t&&t.transferId?S.tx.find(x=>x.transferId===t.transferId&&x.id!==t.id):null;
   let from=t,to=pair;if(t&&t.transferId&&t.amount>0){from=pair;to=t}
   let mode=t?(t.transferId?"vir":t.amount>=0?"rev":"dep"):(presetMode||"dep");
-  const defAcc=regAcc!=="all"?regAcc:S.accounts[0]?.id;
+  const defAcc=regAcc!=="all"?regAcc:defaultAcc();
   const draw=()=>{
-    const isV=mode==="vir",base=isV?from:t;
-    openSheet(`<h2>${t?"Modifier l'opération":"Nouvelle opération"}</h2>
+    const isV=mode==="vir",base=isV?from:tv;
+    openSheet(`<h2>${t?"Modifier l'opération":pre?"Saisir l'échéance":"Nouvelle opération"}</h2>
     <div class="seg" role="group"><button type="button" data-mode="dep" aria-pressed="${mode==="dep"}">${pillIco("down")}Dépense</button><button type="button" data-mode="rev" aria-pressed="${mode==="rev"}">${pillIco("up")}Revenu</button><button type="button" data-mode="vir" aria-pressed="${isV}">${pillIco("transfer")}Virement</button></div>
     <form id="txf" class="form">
-     <div class="field full"><label for="f-amt">Montant (€)</label><input class="inp amountinp num" id="f-amt" inputmode="decimal" required placeholder="0,00" value="${t?String(Math.abs(t.amount)).replace(".",","):""}"></div>
+     <div class="field full"><label for="f-amt">Montant (€)</label><input class="inp amountinp num" id="f-amt" inputmode="decimal" required placeholder="0,00" value="${tv&&tv.amount?String(Math.abs(tv.amount)).replace(".",","):""}"></div>
      <div class="field"><label for="f-acc">${isV?"Depuis le compte":"Compte"}</label><select class="inp" id="f-acc">${accOptions(base?base.accountId:defAcc)}</select></div>
-     ${isV?`<div class="field"><label for="f-to">Vers le compte</label><select class="inp" id="f-to">${accOptions(to?to.accountId:S.accounts.find(a=>a.id!==defAcc)?.id)}</select></div>`:`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${t?t.date:today()}" required></div>`}
-     ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" list="dl-payees" autocomplete="off" value="${esc(t?t.payee:"")}" placeholder="Choisis ou saisis un tiers" required><datalist id="dl-payees">${payeeNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>`}
-     ${isV?"":`<div class="field ${isV?"":""}"><label for="f-cat">Catégorie</label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,t?`${t.catId||""}|${t.subId||""}`:"")}</select></div>`}
+     ${isV?`<div class="field"><label for="f-to">Vers le compte</label><select class="inp" id="f-to">${accOptions(to?to.accountId:S.accounts.find(a=>a.id!==defAcc)?.id)}</select></div>`:`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${tv?tv.date:today()}" required></div>`}
+     ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" list="dl-payees" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required><datalist id="dl-payees">${payeeNames().map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>`}
+     ${isV?"":`<div class="field ${isV?"":""}"><label for="f-cat">Catégorie</label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,tv?`${tv.catId||""}|${tv.subId||""}`:"")}</select></div>`}
      <div class="field"><label for="f-st">Statut</label><select class="inp" id="f-st"><option value="">Non rapprochée</option><option value="R" ${(base?.status)==="R"?"selected":""}>Rapprochée (R)</option></select></div>
      <div class="field full"><label for="f-note">Note</label><input class="inp" id="f-note" value="${esc(base?.note||"")}" placeholder="Facultatif"></div>
     </form>
-    <div class="actions">${t?'<button class="btn danger" id="delTx">Supprimer</button>':""}<div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
+    <div class="actions"><div class="row">${t?'<button class="btn danger" id="delTx">Supprimer</button>':""}${t&&!t.transferId?'<button class="btn" id="mkRec">'+pillIco("calendar")+'Rendre récurrente</button>':""}</div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
     modal.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;draw()});
-    const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");let autoCat=!t;
+    const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");let autoCat=!tv;
     if(pf&&fcEl){fcEl.addEventListener("change",()=>{autoCat=false});pf.addEventListener("input",()=>{if(!autoCat&&fcEl.value)return;const k=payeeDefaultCat(pf.value.trim());
       if(k&&[...fcEl.options].some(o=>o.value===k)){fcEl.value=k;autoCat=true;fcEl.classList.add("prefill");setTimeout(()=>fcEl.classList.remove("prefill"),900)}})}
     const save=()=>{
@@ -1010,10 +1093,12 @@ function txSheet(id,presetMode){
         const pn=document.getElementById("f-payee").value.trim()||"Sans tiers";if(S.payees&&!S.payees.some(p=>p.name.toLowerCase()===pn.toLowerCase()))S.payees.push({id:uid(),name:pn,type:"",active:true});
         S.tx.push({id:t?t.id:uid(),accountId:acc,date,payee:pn,amount:mode==="dep"?-amt:amt,catId:catId||null,subId:subId||null,status:st,note});
       }
-      closeSheet();commit();toast(t?"Opération modifiée":"Opération ajoutée");
+      const wasRec=recPending;if(wasRec)advanceRec(wasRec);
+      closeSheet();commit();toast(t?"Opération modifiée":wasRec?"Échéance saisie, la suivante est programmée":"Opération ajoutée");
     };
     document.getElementById("saveTx").onclick=save;
     document.getElementById("txf").onsubmit=e=>{e.preventDefault();save()};
+    const mk=document.getElementById("mkRec");if(mk)mk.onclick=()=>recSheet(null,{label:t.payee,payee:t.payee,amount:t.amount,accountId:t.accountId,catId:t.catId,subId:t.subId,freq:"M",next:addFreq(t.date,"M"),note:t.note});
     const del=document.getElementById("delTx");if(del)del.onclick=()=>confirmSheet("Supprimer l'opération ?",t.transferId?"Les deux côtés du virement seront supprimés.":"Cette opération sera retirée du registre.","Supprimer",()=>{S.tx=S.tx.filter(x=>x.id!==t.id&&!(t.transferId&&x.transferId===t.transferId));commit();toast("Opération supprimée")});
   };
   if(!S.accounts.length){toast("Crée d'abord un compte.");return}
@@ -1147,7 +1232,7 @@ async function openPicked(){
   const f=await h.getFile();if(await openJson(f,h))return}
 async function openJson(file,handle){
   let o;try{o=JSON.parse(await file.text());if(!o.accounts||!o.tx||!o.categories)throw 0}catch(e){toast("Ce fichier n'est pas un fichier de données PognonPILOT.");return false}
-  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],tx:o.tx}));
+  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],tx:o.tx}));
     if(handle)await linkHandle(handle);dirty=false;lastSaved=Math.max(Date.now(),file.lastModified||0);cache();view="dash";render();
     toast(`${handle?"Fichier lié":"Fichier ouvert"} : ${S.accounts.length} comptes, ${S.tx.length} opérations`)};
   if(dirty&&S.accounts.length)confirmSheet("Remplacer les données actuelles ?","Tes dernières modifications n'ont pas été enregistrées. Elles seront perdues si tu ouvres ce fichier.","Ouvrir quand même",go);else await go();
@@ -1181,6 +1266,9 @@ document.addEventListener("click",async e=>{
   const tf=e.target.closest("[data-txfor]");if(tf){closeSheet();regAcc=tf.dataset.txfor;txSheet();return}
   const py=e.target.closest("[data-payee]");if(py){payeeSheet(py.dataset.payee);return}
   const po=e.target.closest("[data-payeeops]");if(po){closeSheet();regAcc="all";regQ=po.dataset.payeeops;regF="all";view="reg";render();window.scrollTo(0,0);return}
+  const rd=e.target.closest("[data-recdo]");if(rd){recDo(rd.dataset.recdo);return}
+  const rs=e.target.closest("[data-recskip]");if(rs){const r=S.recurring.find(x=>x.id===rs.dataset.recskip);const old=r.next;advanceRec(r.id);commit();toast(`Échéance du ${fdate(old)} passée, prochaine le ${fdate(r.next)}`);return}
+  const re_=e.target.closest("[data-recedit]");if(re_){recSheet(re_.dataset.recedit);return}
   const ib=e.target.closest("[data-icon]");if(ib){iconSheet(ib.dataset.icon);return}
   const qk=e.target.closest("[data-quick]");if(qk){const m=qk.dataset.quick;if(m==="rep"){view="rep";render();window.scrollTo(0,0)}else txSheet(null,m);return}
   const nt=e.target.closest("[data-newtype]");if(nt){accSheet(null,nt.dataset.newtype);return}
@@ -1208,6 +1296,7 @@ document.addEventListener("click",async e=>{
   if(d.delsub){const [ci,si]=d.delsub.split("|");const c=S.categories.find(x=>x.id===ci);c.subs=c.subs.filter(s=>s.id!==si);S.tx.forEach(t=>{if(t.subId===si)t.subId=null});commit();return}
   switch(d.act){
     case"newtx":txSheet();break;
+    case"newrec":recSheet();break;
     case"undrill":if(rep.drill){Object.assign(rep,rep.drill.back);rep.drill=null;renderRep()}break;
     case"backup":{if(await offerFile(`pognonpilot-sauvegarde-${today()}.json`,dataJson(),"application/json"))toast("Copie de sauvegarde créée");break}
     case"reppdf":el.disabled=true;await exportPdf();el.disabled=false;break;
@@ -1237,6 +1326,7 @@ document.addEventListener("click",async e=>{
       const wb=XLSX.utils.book_new();const ws=XLSX.utils.json_to_sheet(exportRows());ws["!cols"]=[{wch:11},{wch:18},{wch:30},{wch:16},{wch:18},{wch:12},{wch:12},{wch:24}];
       XLSX.utils.book_append_sheet(wb,ws,"Opérations");
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.accounts.map(a=>({Compte:a.name,Établissement:a.bank||"",Type:a.type,État:a.closed?"Clôturé":"Actif","Date d'ouverture":a.opened?fdate(a.opened):"","Solde initial":a.initial,Solde:Math.round(balance(a.id)*100)/100,"Solde rapproché":Math.round(balance(a.id,true)*100)/100}))),"Comptes");
+      if(S.recurring.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.recurring.map(r=>({Libellé:r.label,Tiers:r.payee||"",Compte:accById(r.accountId)?.name||"",Catégorie:catLabel({catId:r.catId,subId:r.subId}),Montant:r.amount,Fréquence:freqLabel(r.freq),"Prochaine échéance":fdate(r.next),Active:r.active?"Oui":"Non"}))),"Échéancier");
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.categories.flatMap(c=>[{Catégorie:c.name,"Sous-catégorie":""},...c.subs.map(s=>({Catégorie:c.name,"Sous-catégorie":s.name}))])),"Catégories");
       const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
       if(await offerFile(`pognonpilot-${today()}.xlsx`,new Blob([buf]),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))toast("Export Excel prêt");break}

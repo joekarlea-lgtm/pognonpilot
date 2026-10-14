@@ -1,6 +1,6 @@
 /* PognonPILOT — fonctionnement hors ligne.
    Change VERSION à chaque mise à jour des fichiers pour renouveler le cache. */
-const VERSION = "pognonpilot-v8";
+const VERSION = "pognonpilot-v10";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
