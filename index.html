@@ -347,6 +347,10 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 #mkRec .pi{width:15px;height:15px}
 @media (max-width:820px){.recrow{grid-template-columns:auto minmax(0,1fr) auto}.recact{grid-column:1/-1;justify-content:flex-end}.nav{font-size:10.5px!important;padding:7px 1px!important}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}}}
+.acard .bal,.kpi .v,.fichebal b,.herocard .big,.hero .big{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.herocard>*{min-width:0;max-width:100%}
+.kpi,.acard,.fichebal>div{overflow:hidden}
+@media (max-width:720px){main{padding-bottom:110px}}
 </style>
 
 </head>
@@ -1002,6 +1006,11 @@ function decorateTitles(root){
     const m=h.id==="tiers"?["user",1]:PAGE_ICONS[view]||["tag",0];d.classList.add("hhead");d.insertAdjacentHTML("afterbegin",`<span class="ico pg t${m[1]}">${svgIco(m[0])}</span>`)});(root||document).querySelectorAll("#main h2:not([data-i])").forEach(h=>{h.dataset.i="1";const n=norm(h.textContent.trim());
   const m=TITLE_ICONS.find(([re])=>re.test(n));if(!m)return;h.classList.add("h2i");h.insertAdjacentHTML("afterbegin",`<span class="ico sm t${m[2]}">${svgIco(m[1])}</span>`)})}
 new MutationObserver(()=>decorateTitles()).observe(document.getElementById("main"),{childList:true,subtree:true});
+/* Montants : réduction automatique de la taille pour tenir dans leur case (petits écrans, grande police Android). */
+const FIT_SEL=".acard .bal,.kpi .v,.fichebal b,.herocard .big,.hero .big,.regsum b,.regsum .num,.mstat b,.mstat .num,.donut b,.donut .num,.ficheh .num,.bigamt";
+function fitNums(){document.querySelectorAll(FIT_SEL).forEach(el=>{el.style.fontSize="";if(!el.offsetParent)return;let fs=parseFloat(getComputedStyle(el).fontSize),n=0;while(el.scrollWidth>el.clientWidth+1&&fs>11&&n++<40){fs-=1;el.style.fontSize=fs+"px"}})}
+let fitRaf=0;const fitSoon=()=>{cancelAnimationFrame(fitRaf);fitRaf=requestAnimationFrame(fitNums)};
+new MutationObserver(fitSoon).observe(document.body,{childList:true,subtree:true});addEventListener("resize",fitSoon);if(document.fonts)document.fonts.ready.then(fitSoon);
 
 /* ---------- échéancier (opérations récurrentes, saisie manuelle) ---------- */
 const FREQS=[["W","Hebdomadaire",0,7],["M","Mensuelle",1],["B","Bimestrielle",2],["Q","Trimestrielle",3],["S","Semestrielle",6],["A","Annuelle",12]];
@@ -1260,7 +1269,7 @@ function mmexSheet(d){
     // opération simple rangée en catégorie TRANSFERT : virement dont l'autre compte n'était pas suivi dans Money Manager Ex
     const okey=!parts&&isTrCat(cat)?"p"+t.PAYEEID:null;
     const pn=payName(t.PAYEEID),known=!!pn,ukey=known||!(t.PAYEEID>0)?null:"u"+t.PAYEEID;
-    return{kind:"op",okey,ukey,date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:known?pn:"Sans tiers",cat,parts,status,note}};
+    return{kind:"op",okey,ukey,date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:known?pn:"Sans tiers",cat,parts,status,note,mode:typeof t.PP_MODE==="string"?t.PP_MODE:""}};
   const list=src.map(conv).filter(x=>x.date&&x.amount);
   // groupes « autre compte » : vrais virements (par compte) et opérations TRANSFERT (par tiers)
   const groups={};list.forEach(x=>{if(!x.okey)return;const g=groups[x.okey]||(groups[x.okey]={key:x.okey,n:0,sum:0,pseudo:x.okey[0]==="p",ex:x});g.n++;g.sum+=x.amount});
@@ -1318,7 +1327,7 @@ function mmexSheet(d){
           n++;return}
         const pay=payOf(x);if(S.payees&&pay&&pay!=="Sans tiers"&&!S.payees.some(p=>p.name.toLowerCase()===pay.toLowerCase()))S.payees.push({id:uid(),name:pay,type:"",active:true});
         const pk=k=>{if(String(mapping[k]).startsWith("new|")){const [,cid,sn]=mapping[k].split("|"),c=catById(cid);let sb=c.subs.find(x=>softNorm(x.name)===softNorm(sn));if(!sb){sb={id:uid(),name:sn};c.subs.push(sb)}mapping[k]=`${cid}|${sb.id}`}const [c,sb]=(mapping[k]||"|").split("|");return{catId:c||null,subId:sb||null}};
-        const o={id:uid(),accountId:acc2,date:x.date,payee:pay,amount:x.amount,status:x.status,note:x.note,mode:x.okey?"Virement":""};
+        const o={id:uid(),accountId:acc2,date:x.date,payee:pay,amount:x.amount,status:x.status,note:x.note,mode:x.okey?"Virement":x.mode||""};
         if(x.parts){o.catId=null;o.subId=null;o.splits=x.parts.map(p=>({...pk(p.cat),amount:p.amount}))}else Object.assign(o,pk(x.cat));
         S.tx.push(o);n++});
       L.acc[mainId]=acc2;gList.forEach(g=>{const id=+g.key.slice(1);if(g.pseudo)L.payAcc[id]=otherMap[g.key]||"";else if(otherMap[g.key])L.acc[id]=otherMap[g.key]});
@@ -1385,7 +1394,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="20";
+const APP_VERSION="22";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
