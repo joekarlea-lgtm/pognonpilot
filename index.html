@@ -1241,35 +1241,60 @@ function mmexCatKey(name){if(!name)return"";const [pn,sn]=String(name).split(":"
 function mmexSheet(d){
   const cats=Object.fromEntries((d.CATEGORIES||[]).map(c=>[c.ID,c.NAME])),pays=Object.fromEntries((d.PAYEES||[]).map(x=>[x.ID,x.NAME])),accs=Object.fromEntries((d.ACCOUNTS||[]).map(a=>[a.ID,a]));
   const src=(d.transactions||[]).filter(t=>!t.DELETEDTIME);if(!src.length){toast("Ce fichier Money Manager Ex ne contient aucune opération.");return}
-  const mainId=(d.ACCOUNTS&&d.ACCOUNTS[0])?d.ACCOUNTS[0].ID:src[0].ACCOUNTID;const mainName=accs[mainId]?.NAME||"";
-  const guessAcc=S.accounts.find(a=>keyNorm(a.name)===keyNorm(mainName))?.id||defaultAcc();
-  const used={};src.forEach(t=>{const n=cats[t.CATEGID]||"";used[n]=(used[n]||0)+1});
-  const mapping=Object.fromEntries(Object.keys(used).map(n=>[n,mmexCatKey(n)]));
-  const conv=t=>{const date=String(t.TRANSDATE||"").slice(0,10);let amount=+t.TRANSAMOUNT||0,payee=pays[t.PAYEEID]||"",note=[t.NOTES,t.TRANSACTIONNUMBER].filter(Boolean).join(" · ");
-    if(t.TRANSCODE==="Withdrawal")amount=-amount;
-    else if(t.TRANSCODE==="Transfer"){const out=t.ACCOUNTID===mainId;amount=out?-(+t.TRANSAMOUNT):(+t.TOTRANSAMOUNT||+t.TRANSAMOUNT);const other=accs[out?t.TOACCOUNTID:t.ACCOUNTID]?.NAME;payee=payee||(out?"Virement vers ":"Virement depuis ")+(other||"un autre compte")}
-    return{date,amount:r2(amount),payee:payee||"Sans tiers",cat:cats[t.CATEGID]||"",status:t.STATUS==="R"?"R":"",note}};
+  // compte exporté = celui qui apparaît dans toutes (ou presque toutes) les opérations
+  const hits={};src.forEach(t=>{hits[t.ACCOUNTID]=(hits[t.ACCOUNTID]||0)+1;if(t.TOACCOUNTID>0)hits[t.TOACCOUNTID]=(hits[t.TOACCOUNTID]||0)+1});
+  const mainId=+Object.entries(hits).sort((a,b)=>b[1]-a[1])[0][0];const nameOf=id=>accs[id]?.NAME||`compte n°${id}`;const mainName=nameOf(mainId);
+  const compact=x=>norm(x).replace(/[^A-Z0-9]/g,"");
+  const bestAcc=name=>{const n=compact(name);let best=null,sc=0;S.accounts.forEach(a=>{const m=compact(a.name);let k=0;while(k<n.length&&k<m.length&&n[k]===m[k])k++;const s=(n===m?1000:k)-(a.closed?.5:0);if(s>sc){sc=s;best=a}});return sc>=6?best.id:""};
+  const mainGuess=bestAcc(mainName)||defaultAcc();
+  const others=[...new Set(src.filter(t=>t.TRANSCODE==="Transfer").map(t=>t.ACCOUNTID===mainId?t.TOACCOUNTID:t.ACCOUNTID))];
+  const otherMap=Object.fromEntries(others.map(id=>[id,bestAcc(nameOf(id))]));
+  const sign=t=>t.TRANSCODE==="Withdrawal"?-1:1;
+  const conv=t=>{const date=String(t.TRANSDATE||"").slice(0,10),note=[t.NOTES,t.TRANSACTIONNUMBER].filter(Boolean).join(" · ").replace(/^►\s*/,""),status=t.STATUS==="R"?"R":"";
+    if(t.TRANSCODE==="Transfer"){const out=t.ACCOUNTID===mainId;const amt=out?-(+t.TRANSAMOUNT):(+t.TOTRANSAMOUNT||+t.TRANSAMOUNT);return{kind:"vir",date,amount:r2(amt),other:out?t.TOACCOUNTID:t.ACCOUNTID,status,note}}
+    const parts=Array.isArray(t.DIVISION)&&t.DIVISION.length>1?t.DIVISION.map(p=>({cat:cats[p.CATEGORY_ID]||"",amount:r2(sign(t)*(+p.AMOUNT))})):null;
+    return{kind:"op",date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:pays[t.PAYEEID]||"Sans tiers",cat:parts?"":(cats[t.CATEGID]||""),parts,status,note}};
   const list=src.map(conv).filter(x=>x.date&&x.amount);
-  const ds=list.map(x=>x.date).sort(),net=r2(list.reduce((s,x)=>s+x.amount,0));
-  const draw=()=>{const acc=document.getElementById("mm-acc")?.value||guessAcc,a=accById(acc);const ex=S.tx.filter(t=>t.accountId===acc);
-    const key=x=>`${x.date}|${(+x.amount).toFixed(2)}|${(x.payee||"").toLowerCase()}`;const seen=new Set(ex.map(key));const dup=list.filter(x=>seen.has(key(x))).length;
+  const used={};list.forEach(x=>{if(x.kind!=="op")return;(x.parts||[{cat:x.cat}]).forEach(p=>{used[p.cat]=(used[p.cat]||0)+1})});
+  const mapping=Object.fromEntries(Object.keys(used).map(n=>[n,mmexCatKey(n)]));
+  const ds=list.map(x=>x.date).sort(),nVir=list.filter(x=>x.kind==="vir").length,nSplit=list.filter(x=>x.parts).length;
+  const kOp=x=>`${x.date}|${(+x.amount).toFixed(2)}|${(x.payee||"").toLowerCase()}`,kVir=(date,amt)=>`${date}|${(+amt).toFixed(2)}|T`;
+  const plan=(acc)=>{const exOp=new Set(S.tx.filter(t=>t.accountId===acc&&!t.transferId).map(kOp)),exVir=new Set(S.tx.filter(t=>t.accountId===acc&&t.transferId).map(t=>kVir(t.date,t.amount)));
+    return list.map(x=>({x,dup:x.kind==="vir"?exVir.has(kVir(x.date,x.amount)):exOp.has(kOp(x))}))};
+  const draw=()=>{const acc=document.getElementById("mm-acc")?.value||mainGuess,a=accById(acc);const P=plan(acc),todo=P.filter(p=>!p.dup),dup=P.length-todo.length;
+    const delta=todo.reduce((s,p)=>s+p.x.amount,0),ex=S.tx.filter(t=>t.accountId===acc).length;
+    const otherDelta=id=>todo.filter(p=>p.x.kind==="vir"&&p.x.other===id).reduce((s,p)=>s-p.x.amount,0);
     openSheet(`<h2>Importer depuis Money Manager Ex</h2>
-    <div class="fichebal"><div>${kh("list",3,"Opérations")}<b class="num">${list.length}</b><span class="cat">du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</span></div><div>${kh("scale",0,"Total importé")}<b class="num ${net<0?"neg":"pos"}">${net>0?"+":""}${fmt(net)}</b><span class="cat">${list.filter(x=>x.amount>0).length} crédits · ${list.filter(x=>x.amount<0).length} débits</span></div></div>
-    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Dans le compte${mainName?` <span class="cat">(compte d'origine : ${esc(mainName)})</span>`:""}</label><select class="inp" id="mm-acc">${accOptions(acc)}</select></div></div>
-    <div class="fichebal" style="margin-top:12px"><div>${kh("wallet",0,"Solde actuel")}<b class="num">${fmt(balance(acc))}</b><span class="cat">dont solde de départ ${fmt(a.initial)}, conservé</span></div><div>${kh("check",2,"Solde après import")}<b class="num">${fmt(balance(acc)+list.filter(x=>!seen.has(key(x))).reduce((s,x)=>s+x.amount,0))}</b><span class="cat">${ex.length?`${ex.length} opération${ex.length>1?"s":""} déjà sur ce compte`:"aucune opération existante"}</span></div></div>
-    ${dup?`<div class="banner" style="margin:12px 0 0">${dup} opération${dup>1?"s":""} identique${dup>1?"s":""} (même date, montant et tiers) déjà présente${dup>1?"s":""} : elle${dup>1?"s":""} sera${dup>1?"ont":""} ignorée${dup>1?"s":""}.</div>`:""}
-    ${ex.length&&!dup?`<div class="banner" style="margin:12px 0 0">Ce compte contient déjà ${ex.length} opération${ex.length>1?"s":""}. Vérifie qu'aucune ne fait double emploi avec cet import (une ligne de régularisation, par exemple).</div>`:""}
+    <div class="fichebal"><div>${kh("list",3,"Opérations")}<b class="num">${list.length}</b><span class="cat">du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</span></div><div>${kh("scale",0,"Dont")}<b class="num" style="font-size:16px">${nVir} virement${nVir>1?"s":""} · ${nSplit} ventilée${nSplit>1?"s":""}</b><span class="cat">${list.length-nVir-nSplit} opérations simples</span></div></div>
+    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Compte importé <span class="cat">(dans Money Manager Ex : ${esc(mainName)})</span></label><select class="inp" id="mm-acc">${accOptions(acc)}</select></div></div>
+    <div class="fichebal" style="margin-top:12px"><div>${kh("wallet",0,"Solde actuel")}<b class="num">${fmt(balance(acc))}</b><span class="cat">dont solde de départ ${fmt(a.initial)}, conservé</span></div><div>${kh("check",2,"Solde après import")}<b class="num">${fmt(balance(acc)+delta)}</b><span class="cat">${ex?`${ex} opération${ex>1?"s":""} déjà sur ce compte`:"aucune opération existante"}</span></div></div>
+    ${others.length?`<div class="eyebrow" style="margin:16px 0 8px">Virements : autre compte concerné</div><div class="form">${others.map(id=>`<div class="field full"><label for="mm-o${id}">${esc(nameOf(id))} <span class="cat">· ${list.filter(x=>x.kind==="vir"&&x.other===id).length} virement(s)</span></label><select class="inp" id="mm-o${id}" data-mmo="${id}"><option value="">Ne pas créer l'autre côté du virement</option>${accOptions(otherMap[id])}</select>
+      ${otherMap[id]?`<span class="cat">${esc(accById(otherMap[id]).name)} : ${fmt(balance(otherMap[id]))} → ${fmt(balance(otherMap[id])+otherDelta(id))}</span>`:'<span class="cat">Seul le côté du compte importé sera créé, sans catégorie.</span>'}</div>`).join("")}</div>`:""}
+    ${dup?`<div class="banner" style="margin:12px 0 0">${dup} opération${dup>1?"s":""} déjà présente${dup>1?"s":""} (même date et même montant${nVir?", ou virement déjà enregistré":""}) : ignorée${dup>1?"s":""}.</div>`:ex?`<div class="banner" style="margin:12px 0 0">Ce compte contient déjà ${ex} opération${ex>1?"s":""}. Vérifie qu'aucune ne fait double emploi avec cet import.</div>`:""}
     <div class="eyebrow" style="margin:16px 0 8px">Correspondance des catégories</div>
-    <div class="form">${Object.keys(used).map((n,i)=>`<div class="field full"><label for="mm-c${i}">${esc(n||"Sans catégorie")} <span class="cat">· ${used[n]} opération${used[n]>1?"s":""}</span></label><select class="inp" id="mm-c${i}" data-mmc="${esc(n)}"><option value="">Non catégorisé</option>${catOptions(null,mapping[n])}</select></div>`).join("")}</div>
-    <div class="actions"><div class="row"></div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="mm-go" ${list.length-dup?"":"disabled"}>${list.length-dup?`Importer ${list.length-dup} opération${list.length-dup>1?"s":""}`:"Tout est déjà importé"}</button></div></div>`);
-    document.getElementById("mm-acc").onchange=()=>{modal.querySelectorAll("[data-mmc]").forEach(e=>mapping[e.dataset.mmc]=e.value);draw()};
+    <div class="form">${Object.keys(used).map((n,i)=>`<div class="field full"><label for="mm-c${i}">${esc(n||"Sans catégorie")} <span class="cat">· ${used[n]} ligne${used[n]>1?"s":""}</span></label><select class="inp" id="mm-c${i}" data-mmc="${esc(n)}"><option value="">Non catégorisé</option>${catOptions(null,mapping[n])}</select></div>`).join("")}</div>
+    <div class="actions"><div class="row"></div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="mm-go" ${todo.length?"":"disabled"}>${todo.length?`Importer ${todo.length} opération${todo.length>1?"s":""}`:"Tout est déjà importé"}</button></div></div>`);
+    const keep=()=>{modal.querySelectorAll("[data-mmc]").forEach(e=>mapping[e.dataset.mmc]=e.value);modal.querySelectorAll("[data-mmo]").forEach(e=>otherMap[e.dataset.mmo]=e.value)};
+    document.getElementById("mm-acc").onchange=()=>{keep();draw()};
     modal.querySelectorAll("[data-mmc]").forEach(e=>e.onchange=()=>{mapping[e.dataset.mmc]=e.value});
-    document.getElementById("mm-go").onclick=()=>{const acc2=document.getElementById("mm-acc").value;const seen2=new Set(S.tx.filter(t=>t.accountId===acc2).map(key));let n=0;
-      list.forEach(x=>{if(seen2.has(key(x)))return;seen2.add(key(x));const [c,sb]=(mapping[x.cat]||"|").split("|");
+    modal.querySelectorAll("[data-mmo]").forEach(e=>e.onchange=()=>{keep();if(otherMap[e.dataset.mmo]===document.getElementById("mm-acc").value){otherMap[e.dataset.mmo]="";toast("L'autre compte doit être différent du compte importé.")}draw()});
+    document.getElementById("mm-go").onclick=()=>{keep();const acc2=document.getElementById("mm-acc").value,A=accById(acc2);let n=0,nv=0;
+      plan(acc2).forEach(({x,dup})=>{if(dup)return;
+        if(x.kind==="vir"){const oid=otherMap[x.other];
+          if(oid){const B=accById(oid);const exB=S.tx.some(t=>t.accountId===oid&&t.transferId&&kVir(t.date,t.amount)===kVir(x.date,-x.amount));
+            if(exB){const leg=S.tx.find(t=>t.accountId===oid&&t.transferId&&kVir(t.date,t.amount)===kVir(x.date,-x.amount));S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.amount<0?`Virement vers ${B.name}`:`Virement depuis ${B.name}`,amount:x.amount,transferId:leg.transferId,status:x.status,note:x.note,mode:"Virement"});}
+            else{const tid=uid();S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.amount<0?`Virement vers ${B.name}`:`Virement depuis ${B.name}`,amount:x.amount,transferId:tid,status:x.status,note:x.note,mode:"Virement"});
+              S.tx.push({id:uid(),accountId:oid,date:x.date,payee:x.amount<0?`Virement depuis ${A.name}`:`Virement vers ${A.name}`,amount:-x.amount,transferId:tid,status:x.status,note:x.note,mode:"Virement"})}nv++}
+          else S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:(x.amount<0?"Virement vers ":"Virement depuis ")+nameOf(x.other),amount:x.amount,catId:null,subId:null,status:x.status,note:x.note,mode:"Virement"});
+          n++;return}
         if(S.payees&&x.payee&&!S.payees.some(p=>p.name.toLowerCase()===x.payee.toLowerCase()))S.payees.push({id:uid(),name:x.payee,type:"",active:true});
-        S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.payee,amount:x.amount,catId:c||null,subId:sb||null,status:x.status,note:x.note,mode:""});n++});
-      closeSheet();regAcc=acc2;regF="all";regQ="";view="reg";commit();toast(`${n} opération${n>1?"s":""} importée${n>1?"s":""}. Solde du compte : ${fmt(balance(acc2))}`)}};
+        const pk=k=>{const [c,sb]=(mapping[k]||"|").split("|");return{catId:c||null,subId:sb||null}};
+        const o={id:uid(),accountId:acc2,date:x.date,payee:x.payee,amount:x.amount,status:x.status,note:x.note,mode:""};
+        if(x.parts){o.catId=null;o.subId=null;o.splits=x.parts.map(p=>({...pk(p.cat),amount:p.amount}))}else Object.assign(o,pk(x.cat));
+        S.tx.push(o);n++});
+      closeSheet();regAcc=acc2;regF="all";regQ="";view="reg";commit();toast(`${n} opération${n>1?"s":""} importée${n>1?"s":""}${nv?` dont ${nv} virement${nv>1?"s":""}`:""}. Solde du compte : ${fmt(balance(acc2))}`)}};
   draw()}
+
 async function handleImport(file){
   if(/\.json$/i.test(file.name)){let d;try{d=JSON.parse(await file.text())}catch(e){toast("Ce fichier .json est illisible.");return}
     if(d&&Array.isArray(d.transactions)){mmexSheet(d);return}
@@ -1329,7 +1354,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="15";
+const APP_VERSION="16";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
