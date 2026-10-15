@@ -459,8 +459,9 @@ const splitSummary=t=>t.splits.map(p=>`${partLabel(p)} ${fmt(Math.abs(p.amount))
 const catName=t=>S.categories.find(c=>c.id===t.catId)?.name||"Non catégorisé";
 /* Revenus / dépenses nets : les opérations d'une même catégorie se compensent (un remboursement réduit la dépense).
    Les virements sont exclus ; une opération sans catégorie compte selon son signe. */
-function netSplit(list,keyFn){list=expandSplits(list);const units={};
-  list.forEach(t=>{if(t.transferId)return;const g=keyFn?keyFn(t):"";const k=g+"\u0001"+(t.catId||"tx"+t.id);(units[k]||(units[k]={g,v:0})).v+=t.amount});
+function trCatIds(){return new Set(S.categories.filter(c=>softNorm(c.name)==="TRANSFERT").map(c=>c.id))}
+function netSplit(list,keyFn){list=expandSplits(list);const units={},TR=trCatIds();
+  list.forEach(t=>{if(t.transferId||TR.has(t.catId))return;const g=keyFn?keyFn(t):"";const k=g+"\u0001"+(t.catId||"tx"+t.id);(units[k]||(units[k]={g,v:0})).v+=t.amount});
   const groups={};let rev=0,dep=0;
   Object.values(units).forEach(u=>{const o=groups[u.g]||(groups[u.g]={rev:0,dep:0});if(u.v>0){o.rev+=u.v;rev+=u.v}else{o.dep-=u.v;dep-=u.v}});
   return{rev,dep,groups}}
@@ -1132,7 +1133,7 @@ function confirmSheet(title,text,okLabel,onOk){openSheet(`<h2>${esc(title)}</h2>
 function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 
 function catOptions(kind,sel){return S.categories.map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
-function accOptions(sel){return S.accounts.filter(a=>!a.closed||a.id===sel).map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)}</option>`).join("")}
+function accOptions(sel,all){return S.accounts.filter(a=>all||!a.closed||a.id===sel).map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)}${a.closed?" (clôturé)":""}</option>`).join("")}
 
 function txSheet(id,presetMode,pre){
   const t=id?S.tx.find(x=>x.id===id):null;const tv=t||pre||null;let splitInit=splitInitOf(tv),spEd=null;recPending=pre&&pre.recId||null;
@@ -1241,55 +1242,68 @@ function mmexCatKey(name){if(!name)return"";const [pn,sn]=String(name).split(":"
 function mmexSheet(d){
   const cats=Object.fromEntries((d.CATEGORIES||[]).map(c=>[c.ID,c.NAME])),pays=Object.fromEntries((d.PAYEES||[]).map(x=>[x.ID,x.NAME])),accs=Object.fromEntries((d.ACCOUNTS||[]).map(a=>[a.ID,a]));
   const src=(d.transactions||[]).filter(t=>!t.DELETEDTIME);if(!src.length){toast("Ce fichier Money Manager Ex ne contient aucune opération.");return}
-  // compte exporté = celui qui apparaît dans toutes (ou presque toutes) les opérations
   const hits={};src.forEach(t=>{hits[t.ACCOUNTID]=(hits[t.ACCOUNTID]||0)+1;if(t.TOACCOUNTID>0)hits[t.TOACCOUNTID]=(hits[t.TOACCOUNTID]||0)+1});
   const mainId=+Object.entries(hits).sort((a,b)=>b[1]-a[1])[0][0];const nameOf=id=>accs[id]?.NAME||`compte n°${id}`;const mainName=nameOf(mainId);
   const compact=x=>norm(x).replace(/[^A-Z0-9]/g,"");
   const bestAcc=name=>{const n=compact(name);let best=null,sc=0;S.accounts.forEach(a=>{const m=compact(a.name);let k=0;while(k<n.length&&k<m.length&&n[k]===m[k])k++;const s=(n===m?1000:k)-(a.closed?.5:0);if(s>sc){sc=s;best=a}});return sc>=6?best.id:""};
   const mainGuess=bestAcc(mainName)||defaultAcc();
-  const others=[...new Set(src.filter(t=>t.TRANSCODE==="Transfer").map(t=>t.ACCOUNTID===mainId?t.TOACCOUNTID:t.ACCOUNTID))];
-  const otherMap=Object.fromEntries(others.map(id=>[id,bestAcc(nameOf(id))]));
   const sign=t=>t.TRANSCODE==="Withdrawal"?-1:1;
+  const isTrCat=n=>softNorm(String(n||"").split(":")[0])==="TRANSFERT";
   const conv=t=>{const date=String(t.TRANSDATE||"").slice(0,10),note=[t.NOTES,t.TRANSACTIONNUMBER].filter(Boolean).join(" · ").replace(/^►\s*/,""),status=t.STATUS==="R"?"R":"";
-    if(t.TRANSCODE==="Transfer"){const out=t.ACCOUNTID===mainId;const amt=out?-(+t.TRANSAMOUNT):(+t.TOTRANSAMOUNT||+t.TRANSAMOUNT);return{kind:"vir",date,amount:r2(amt),other:out?t.TOACCOUNTID:t.ACCOUNTID,status,note}}
+    if(t.TRANSCODE==="Transfer"){const out=t.ACCOUNTID===mainId;const amt=out?-(+t.TRANSAMOUNT):(+t.TOTRANSAMOUNT||+t.TRANSAMOUNT);return{kind:"vir",okey:"a"+(out?t.TOACCOUNTID:t.ACCOUNTID),date,amount:r2(amt),status,note}}
     const parts=Array.isArray(t.DIVISION)&&t.DIVISION.length>1?t.DIVISION.map(p=>({cat:cats[p.CATEGORY_ID]||"",amount:r2(sign(t)*(+p.AMOUNT))})):null;
-    return{kind:"op",date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:pays[t.PAYEEID]||"Sans tiers",cat:parts?"":(cats[t.CATEGID]||""),parts,status,note}};
+    const cat=parts?"":(cats[t.CATEGID]||"");
+    // opération simple rangée en catégorie TRANSFERT : virement dont l'autre compte n'était pas suivi dans Money Manager Ex
+    const okey=!parts&&isTrCat(cat)?"p"+t.PAYEEID:null;
+    return{kind:"op",okey,date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:pays[t.PAYEEID]||"Sans tiers",cat,parts,status,note}};
   const list=src.map(conv).filter(x=>x.date&&x.amount);
+  // groupes « autre compte » : vrais virements (par compte) et opérations TRANSFERT (par tiers)
+  const groups={};list.forEach(x=>{if(!x.okey)return;const g=groups[x.okey]||(groups[x.okey]={key:x.okey,n:0,sum:0,pseudo:x.okey[0]==="p",ex:x});g.n++;g.sum+=x.amount});
+  Object.values(groups).forEach(g=>{const id=+g.key.slice(1);g.label=g.pseudo?(pays[id]?`Tiers « ${pays[id]} »`:`Tiers n°${id} (nom absent du fichier)`):nameOf(id);g.guess=g.pseudo?(pays[id]?bestAcc(pays[id]):""):bestAcc(nameOf(id))});
+  const gList=Object.values(groups).sort((a,b)=>(a.pseudo-b.pseudo)||b.n-a.n);
+  const otherMap=Object.fromEntries(gList.map(g=>[g.key,g.guess]));
+  const asVir=x=>x.kind==="vir"||(x.okey&&otherMap[x.okey]);
   const used={};list.forEach(x=>{if(x.kind!=="op")return;(x.parts||[{cat:x.cat}]).forEach(p=>{used[p.cat]=(used[p.cat]||0)+1})});
   const mapping=Object.fromEntries(Object.keys(used).map(n=>[n,mmexCatKey(n)]));
-  const ds=list.map(x=>x.date).sort(),nVir=list.filter(x=>x.kind==="vir").length,nSplit=list.filter(x=>x.parts).length;
+  const trKey=amt=>{const [c,sb]=(mmexCatKey(amt<0?"TRANSFERT:Virement vers un compte":"TRANSFERT:Virement depuis un compte")||"|").split("|");return{catId:c||null,subId:sb||null}};
+  const ds=list.map(x=>x.date).sort(),nSplit=list.filter(x=>x.parts).length;
   const kOp=x=>`${x.date}|${(+x.amount).toFixed(2)}|${(x.payee||"").toLowerCase()}`,kVir=(date,amt)=>`${date}|${(+amt).toFixed(2)}|T`;
   const plan=(acc)=>{const exOp=new Set(S.tx.filter(t=>t.accountId===acc&&!t.transferId).map(kOp)),exVir=new Set(S.tx.filter(t=>t.accountId===acc&&t.transferId).map(t=>kVir(t.date,t.amount)));
-    return list.map(x=>({x,dup:x.kind==="vir"?exVir.has(kVir(x.date,x.amount)):exOp.has(kOp(x))}))};
-  const draw=()=>{const acc=document.getElementById("mm-acc")?.value||mainGuess,a=accById(acc);const P=plan(acc),todo=P.filter(p=>!p.dup),dup=P.length-todo.length;
+    return list.map(x=>({x,vir:!!asVir(x),dup:asVir(x)?exVir.has(kVir(x.date,x.amount))||(x.kind==="op"&&exOp.has(kOp(x))):exOp.has(kOp(x))}))};
+  let curAcc=mainGuess;
+  const draw=()=>{const acc=curAcc,a=accById(acc);const P=plan(acc),todo=P.filter(p=>!p.dup),dup=P.length-todo.length;
+    const nVir=P.filter(p=>p.vir).length,nTr=P.filter(p=>!p.vir&&p.x.okey).length;
     const delta=todo.reduce((s,p)=>s+p.x.amount,0),ex=S.tx.filter(t=>t.accountId===acc).length;
-    const otherDelta=id=>todo.filter(p=>p.x.kind==="vir"&&p.x.other===id).reduce((s,p)=>s-p.x.amount,0);
+    const otherDelta=id=>todo.filter(p=>p.vir&&otherMap[p.x.okey]===id).reduce((s,p)=>s-p.x.amount,0);
+    const gRow=g=>{const sel=otherMap[g.key];return`<div class="field full"><label for="mm-o${g.key}">${esc(g.label)} <span class="cat">· ${g.n} ligne${g.n>1?"s":""}, solde ${fmt(g.sum)}${g.pseudo?`, ex. ${fdate(g.ex.date)} ${fmt(g.ex.amount)}`:""}</span></label><select class="inp" id="mm-o${g.key}" data-mmo="${g.key}"><option value="">${g.pseudo?"Garder en opérations, catégorie TRANSFERT":"Ne pas créer l'autre côté du virement"}</option>${accOptions(sel,true)}</select>
+      ${sel?`<span class="cat">Virements créés des deux côtés · ${esc(accById(sel).name)} : ${fmt(balance(sel))} → ${fmt(balance(sel)+otherDelta(sel))}</span>`:`<span class="cat">${g.pseudo?"Opérations simples en catégorie TRANSFERT, hors revenus et dépenses.":"Seul le côté du compte importé sera créé, en catégorie TRANSFERT (hors revenus et dépenses)."}</span>`}</div>`};
+    const real=gList.filter(g=>!g.pseudo),pseudo=gList.filter(g=>g.pseudo);
     openSheet(`<h2>Importer depuis Money Manager Ex</h2>
-    <div class="fichebal"><div>${kh("list",3,"Opérations")}<b class="num">${list.length}</b><span class="cat">du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</span></div><div>${kh("scale",0,"Dont")}<b class="num" style="font-size:16px">${nVir} virement${nVir>1?"s":""} · ${nSplit} ventilée${nSplit>1?"s":""}</b><span class="cat">${list.length-nVir-nSplit} opérations simples</span></div></div>
-    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Compte importé <span class="cat">(dans Money Manager Ex : ${esc(mainName)})</span></label><select class="inp" id="mm-acc">${accOptions(acc)}</select></div></div>
+    <div class="fichebal"><div>${kh("list",3,"Opérations")}<b class="num">${list.length}</b><span class="cat">du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</span></div><div>${kh("scale",0,"Dont")}<b class="num" style="font-size:16px">${nVir} virement${nVir>1?"s":""} · ${nSplit} ventilée${nSplit>1?"s":""}</b><span class="cat">${list.length-nVir-nSplit} opérations simples${nTr?` dont ${nTr} en catégorie TRANSFERT, hors revenus et dépenses`:""}</span></div></div>
+    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Compte importé <span class="cat">(dans Money Manager Ex : ${esc(mainName)})</span></label><select class="inp" id="mm-acc">${accOptions(acc,true)}</select></div></div>
     <div class="fichebal" style="margin-top:12px"><div>${kh("wallet",0,"Solde actuel")}<b class="num">${fmt(balance(acc))}</b><span class="cat">dont solde de départ ${fmt(a.initial)}, conservé</span></div><div>${kh("check",2,"Solde après import")}<b class="num">${fmt(balance(acc)+delta)}</b><span class="cat">${ex?`${ex} opération${ex>1?"s":""} déjà sur ce compte`:"aucune opération existante"}</span></div></div>
-    ${others.length?`<div class="eyebrow" style="margin:16px 0 8px">Virements : autre compte concerné</div><div class="form">${others.map(id=>`<div class="field full"><label for="mm-o${id}">${esc(nameOf(id))} <span class="cat">· ${list.filter(x=>x.kind==="vir"&&x.other===id).length} virement(s)</span></label><select class="inp" id="mm-o${id}" data-mmo="${id}"><option value="">Ne pas créer l'autre côté du virement</option>${accOptions(otherMap[id])}</select>
-      ${otherMap[id]?`<span class="cat">${esc(accById(otherMap[id]).name)} : ${fmt(balance(otherMap[id]))} → ${fmt(balance(otherMap[id])+otherDelta(id))}</span>`:'<span class="cat">Seul le côté du compte importé sera créé, sans catégorie.</span>'}</div>`).join("")}</div>`:""}
+    ${real.length?`<div class="eyebrow" style="margin:16px 0 8px">Virements : autre compte concerné</div><div class="form">${real.map(gRow).join("")}</div>`:""}
+    ${pseudo.length?`<div class="eyebrow" style="margin:16px 0 8px">Opérations en catégorie TRANSFERT : convertir en virements ?</div><div class="cat" style="margin:-2px 0 8px">Choisis le compte qui correspond à chaque tiers pour créer de vrais virements des deux côtés.</div><div class="form">${pseudo.map(gRow).join("")}</div>`:""}
     ${dup?`<div class="banner" style="margin:12px 0 0">${dup} opération${dup>1?"s":""} déjà présente${dup>1?"s":""} (même date et même montant${nVir?", ou virement déjà enregistré":""}) : ignorée${dup>1?"s":""}.</div>`:ex?`<div class="banner" style="margin:12px 0 0">Ce compte contient déjà ${ex} opération${ex>1?"s":""}. Vérifie qu'aucune ne fait double emploi avec cet import.</div>`:""}
     <div class="eyebrow" style="margin:16px 0 8px">Correspondance des catégories</div>
     <div class="form">${Object.keys(used).map((n,i)=>`<div class="field full"><label for="mm-c${i}">${esc(n||"Sans catégorie")} <span class="cat">· ${used[n]} ligne${used[n]>1?"s":""}</span></label><select class="inp" id="mm-c${i}" data-mmc="${esc(n)}"><option value="">Non catégorisé</option>${catOptions(null,mapping[n])}</select></div>`).join("")}</div>
     <div class="actions"><div class="row"></div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="mm-go" ${todo.length?"":"disabled"}>${todo.length?`Importer ${todo.length} opération${todo.length>1?"s":""}`:"Tout est déjà importé"}</button></div></div>`);
     const keep=()=>{modal.querySelectorAll("[data-mmc]").forEach(e=>mapping[e.dataset.mmc]=e.value);modal.querySelectorAll("[data-mmo]").forEach(e=>otherMap[e.dataset.mmo]=e.value)};
-    document.getElementById("mm-acc").onchange=()=>{keep();draw()};
+    document.getElementById("mm-acc").onchange=e=>{keep();curAcc=e.target.value;draw()};
     modal.querySelectorAll("[data-mmc]").forEach(e=>e.onchange=()=>{mapping[e.dataset.mmc]=e.value});
     modal.querySelectorAll("[data-mmo]").forEach(e=>e.onchange=()=>{keep();if(otherMap[e.dataset.mmo]===document.getElementById("mm-acc").value){otherMap[e.dataset.mmo]="";toast("L'autre compte doit être différent du compte importé.")}draw()});
     document.getElementById("mm-go").onclick=()=>{keep();const acc2=document.getElementById("mm-acc").value,A=accById(acc2);let n=0,nv=0;
-      plan(acc2).forEach(({x,dup})=>{if(dup)return;
-        if(x.kind==="vir"){const oid=otherMap[x.other];
-          if(oid){const B=accById(oid);const exB=S.tx.some(t=>t.accountId===oid&&t.transferId&&kVir(t.date,t.amount)===kVir(x.date,-x.amount));
-            if(exB){const leg=S.tx.find(t=>t.accountId===oid&&t.transferId&&kVir(t.date,t.amount)===kVir(x.date,-x.amount));S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.amount<0?`Virement vers ${B.name}`:`Virement depuis ${B.name}`,amount:x.amount,transferId:leg.transferId,status:x.status,note:x.note,mode:"Virement"});}
-            else{const tid=uid();S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.amount<0?`Virement vers ${B.name}`:`Virement depuis ${B.name}`,amount:x.amount,transferId:tid,status:x.status,note:x.note,mode:"Virement"});
-              S.tx.push({id:uid(),accountId:oid,date:x.date,payee:x.amount<0?`Virement depuis ${A.name}`:`Virement vers ${A.name}`,amount:-x.amount,transferId:tid,status:x.status,note:x.note,mode:"Virement"})}nv++}
-          else S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:(x.amount<0?"Virement vers ":"Virement depuis ")+nameOf(x.other),amount:x.amount,catId:null,subId:null,status:x.status,note:x.note,mode:"Virement"});
+      plan(acc2).forEach(({x,vir,dup})=>{if(dup)return;
+        if(vir){const oid=otherMap[x.okey];
+          if(oid&&oid!==acc2){const B=accById(oid);const leg=S.tx.find(t=>t.accountId===oid&&t.transferId&&kVir(t.date,t.amount)===kVir(x.date,-x.amount)&&!S.tx.some(u=>u.transferId===t.transferId&&u.id!==t.id));
+            const tid=leg?leg.transferId:uid();
+            S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.amount<0?`Virement vers ${B.name}`:`Virement depuis ${B.name}`,amount:x.amount,transferId:tid,status:x.status,note:x.note,mode:"Virement"});
+            if(!leg)S.tx.push({id:uid(),accountId:oid,date:x.date,payee:x.amount<0?`Virement depuis ${A.name}`:`Virement vers ${A.name}`,amount:-x.amount,transferId:tid,status:x.status,note:x.note,mode:"Virement"});nv++}
+          else S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:(x.amount<0?"Virement vers ":"Virement depuis ")+nameOf(+x.okey.slice(1)),amount:x.amount,...trKey(x.amount),status:x.status,note:x.note,mode:"Virement"});
           n++;return}
-        if(S.payees&&x.payee&&!S.payees.some(p=>p.name.toLowerCase()===x.payee.toLowerCase()))S.payees.push({id:uid(),name:x.payee,type:"",active:true});
+        if(S.payees&&x.payee&&x.payee!=="Sans tiers"&&!S.payees.some(p=>p.name.toLowerCase()===x.payee.toLowerCase()))S.payees.push({id:uid(),name:x.payee,type:"",active:true});
         const pk=k=>{const [c,sb]=(mapping[k]||"|").split("|");return{catId:c||null,subId:sb||null}};
-        const o={id:uid(),accountId:acc2,date:x.date,payee:x.payee,amount:x.amount,status:x.status,note:x.note,mode:""};
+        const o={id:uid(),accountId:acc2,date:x.date,payee:x.payee,amount:x.amount,status:x.status,note:x.note,mode:x.okey?"Virement":""};
         if(x.parts){o.catId=null;o.subId=null;o.splits=x.parts.map(p=>({...pk(p.cat),amount:p.amount}))}else Object.assign(o,pk(x.cat));
         S.tx.push(o);n++});
       closeSheet();regAcc=acc2;regF="all";regQ="";view="reg";commit();toast(`${n} opération${n>1?"s":""} importée${n>1?"s":""}${nv?` dont ${nv} virement${nv>1?"s":""}`:""}. Solde du compte : ${fmt(balance(acc2))}`)}};
@@ -1354,7 +1368,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="16";
+const APP_VERSION="18";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
