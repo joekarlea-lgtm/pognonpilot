@@ -370,7 +370,7 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 <button class="fab" id="fab" aria-label="Nouvelle opération">+</button>
 <div id="modal"></div>
 <input type="file" id="fileJson" accept=".json,application/json" hidden>
-<input type="file" id="fileImport" accept=".csv,.xlsx,.xls,text/csv" hidden>
+<input type="file" id="fileImport" accept=".csv,.xlsx,.xls,.json,text/csv,application/json" hidden>
 
 <script>
 "use strict";
@@ -802,7 +802,7 @@ function renderFile(){
    :`<p>Toutes tes données tiennent dans un seul fichier <b>.json</b>. ${navigator.canShare&&!window.claude?"Sur ton téléphone, « Enregistrer » ouvre le menu de partage : choisis <b>OneDrive</b>. Pour reprendre tes données, « Ouvrir mon fichier » puis OneDrive.":"Range-le dans ton dossier OneDrive : tu l'ouvres depuis ton PC ou ton téléphone, et tu l'enregistres après tes saisies."}</p>
     <div class="row"><button class="btn primary" data-act="save">Enregistrer mon fichier</button><button class="btn" data-act="open">Ouvrir mon fichier</button>${navigator.canShare&&!window.claude?'<button class="btn" data-act="download">Télécharger une copie</button>':""}</div>`}</div>
    ${deferredInstall?`<div class="panel"><h2>Installer l'appli</h2><p>Ajoute PognonPILOT sur cet appareil : une icône, une fenêtre à elle, et un fonctionnement hors ligne.</p><div class="row"><button class="btn primary" data-act="install">Installer PognonPILOT</button></div></div>`:""}
-   <div class="panel"><h2>Importer un relevé</h2><p>Fichier <b>.csv</b> ou <b>.xlsx</b> exporté par ta banque ou par ton classeur. Tu choisis ensuite le compte et les colonnes à utiliser. Les doublons sont ignorés.</p>
+   <div class="panel"><h2>Importer un relevé</h2><p>Fichier <b>.csv</b> ou <b>.xlsx</b> exporté par ta banque ou par ton classeur, ou export <b>.json</b> de Money Manager Ex. Tu choisis ensuite le compte et les colonnes à utiliser. Les doublons sont ignorés.</p>
     <div class="row"><button class="btn primary" data-act="import">Choisir un fichier</button></div></div>
    <div class="panel"><h2>Exporter</h2><p>Classeur Excel avec un onglet Opérations, Comptes et Catégories, ou CSV des opérations au format français (séparateur point-virgule).</p>
     <div class="row"><button class="btn" data-act="xlsx">Exporter en .xlsx</button><button class="btn" data-act="csv">Exporter en .csv</button></div></div>  </div>`;
@@ -1232,7 +1232,49 @@ function parseCSV(text){text=text.replace(/^﻿/,"");const first=text.split(/\r?
     else if(c==='"')q=true;else if(c===sep){row.push(cell);cell=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell);rows.push(row);row=[];cell=""}else cell+=c}
   if(cell||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>String(x).trim()!==""))}
 
+
+/* ---------- import Money Manager Ex (export .json) : ajoute des opérations, ne touche pas au solde de départ ---------- */
+const keyNorm=x=>norm(x).replace(/[^A-Z0-9]+/g," ").trim();
+const softNorm=x=>keyNorm(x).split(" ").map(w=>w.replace(/S$/,"")).join(" ");
+function mmexCatKey(name){if(!name)return"";const [pn,sn]=String(name).split(":");const c=S.categories.find(x=>softNorm(x.name)===softNorm(pn));if(!c)return"";
+  if(!sn)return c.id+"|";const sb=c.subs.find(x=>softNorm(x.name)===softNorm(sn));return sb?`${c.id}|${sb.id}`:c.id+"|"}
+function mmexSheet(d){
+  const cats=Object.fromEntries((d.CATEGORIES||[]).map(c=>[c.ID,c.NAME])),pays=Object.fromEntries((d.PAYEES||[]).map(x=>[x.ID,x.NAME])),accs=Object.fromEntries((d.ACCOUNTS||[]).map(a=>[a.ID,a]));
+  const src=(d.transactions||[]).filter(t=>!t.DELETEDTIME);if(!src.length){toast("Ce fichier Money Manager Ex ne contient aucune opération.");return}
+  const mainId=(d.ACCOUNTS&&d.ACCOUNTS[0])?d.ACCOUNTS[0].ID:src[0].ACCOUNTID;const mainName=accs[mainId]?.NAME||"";
+  const guessAcc=S.accounts.find(a=>keyNorm(a.name)===keyNorm(mainName))?.id||defaultAcc();
+  const used={};src.forEach(t=>{const n=cats[t.CATEGID]||"";used[n]=(used[n]||0)+1});
+  const mapping=Object.fromEntries(Object.keys(used).map(n=>[n,mmexCatKey(n)]));
+  const conv=t=>{const date=String(t.TRANSDATE||"").slice(0,10);let amount=+t.TRANSAMOUNT||0,payee=pays[t.PAYEEID]||"",note=[t.NOTES,t.TRANSACTIONNUMBER].filter(Boolean).join(" · ");
+    if(t.TRANSCODE==="Withdrawal")amount=-amount;
+    else if(t.TRANSCODE==="Transfer"){const out=t.ACCOUNTID===mainId;amount=out?-(+t.TRANSAMOUNT):(+t.TOTRANSAMOUNT||+t.TRANSAMOUNT);const other=accs[out?t.TOACCOUNTID:t.ACCOUNTID]?.NAME;payee=payee||(out?"Virement vers ":"Virement depuis ")+(other||"un autre compte")}
+    return{date,amount:r2(amount),payee:payee||"Sans tiers",cat:cats[t.CATEGID]||"",status:t.STATUS==="R"?"R":"",note}};
+  const list=src.map(conv).filter(x=>x.date&&x.amount);
+  const ds=list.map(x=>x.date).sort(),net=r2(list.reduce((s,x)=>s+x.amount,0));
+  const draw=()=>{const acc=document.getElementById("mm-acc")?.value||guessAcc,a=accById(acc);const ex=S.tx.filter(t=>t.accountId===acc);
+    const key=x=>`${x.date}|${(+x.amount).toFixed(2)}|${(x.payee||"").toLowerCase()}`;const seen=new Set(ex.map(key));const dup=list.filter(x=>seen.has(key(x))).length;
+    openSheet(`<h2>Importer depuis Money Manager Ex</h2>
+    <div class="fichebal"><div>${kh("list",3,"Opérations")}<b class="num">${list.length}</b><span class="cat">du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</span></div><div>${kh("scale",0,"Total importé")}<b class="num ${net<0?"neg":"pos"}">${net>0?"+":""}${fmt(net)}</b><span class="cat">${list.filter(x=>x.amount>0).length} crédits · ${list.filter(x=>x.amount<0).length} débits</span></div></div>
+    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Dans le compte${mainName?` <span class="cat">(compte d'origine : ${esc(mainName)})</span>`:""}</label><select class="inp" id="mm-acc">${accOptions(acc)}</select></div></div>
+    <div class="fichebal" style="margin-top:12px"><div>${kh("wallet",0,"Solde actuel")}<b class="num">${fmt(balance(acc))}</b><span class="cat">dont solde de départ ${fmt(a.initial)}, conservé</span></div><div>${kh("check",2,"Solde après import")}<b class="num">${fmt(balance(acc)+list.filter(x=>!seen.has(key(x))).reduce((s,x)=>s+x.amount,0))}</b><span class="cat">${ex.length?`${ex.length} opération${ex.length>1?"s":""} déjà sur ce compte`:"aucune opération existante"}</span></div></div>
+    ${dup?`<div class="banner" style="margin:12px 0 0">${dup} opération${dup>1?"s":""} identique${dup>1?"s":""} (même date, montant et tiers) déjà présente${dup>1?"s":""} : elle${dup>1?"s":""} sera${dup>1?"ont":""} ignorée${dup>1?"s":""}.</div>`:""}
+    ${ex.length&&!dup?`<div class="banner" style="margin:12px 0 0">Ce compte contient déjà ${ex.length} opération${ex.length>1?"s":""}. Vérifie qu'aucune ne fait double emploi avec cet import (une ligne de régularisation, par exemple).</div>`:""}
+    <div class="eyebrow" style="margin:16px 0 8px">Correspondance des catégories</div>
+    <div class="form">${Object.keys(used).map((n,i)=>`<div class="field full"><label for="mm-c${i}">${esc(n||"Sans catégorie")} <span class="cat">· ${used[n]} opération${used[n]>1?"s":""}</span></label><select class="inp" id="mm-c${i}" data-mmc="${esc(n)}"><option value="">Non catégorisé</option>${catOptions(null,mapping[n])}</select></div>`).join("")}</div>
+    <div class="actions"><div class="row"></div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="mm-go" ${list.length-dup?"":"disabled"}>${list.length-dup?`Importer ${list.length-dup} opération${list.length-dup>1?"s":""}`:"Tout est déjà importé"}</button></div></div>`);
+    document.getElementById("mm-acc").onchange=()=>{modal.querySelectorAll("[data-mmc]").forEach(e=>mapping[e.dataset.mmc]=e.value);draw()};
+    modal.querySelectorAll("[data-mmc]").forEach(e=>e.onchange=()=>{mapping[e.dataset.mmc]=e.value});
+    document.getElementById("mm-go").onclick=()=>{const acc2=document.getElementById("mm-acc").value;const seen2=new Set(S.tx.filter(t=>t.accountId===acc2).map(key));let n=0;
+      list.forEach(x=>{if(seen2.has(key(x)))return;seen2.add(key(x));const [c,sb]=(mapping[x.cat]||"|").split("|");
+        if(S.payees&&x.payee&&!S.payees.some(p=>p.name.toLowerCase()===x.payee.toLowerCase()))S.payees.push({id:uid(),name:x.payee,type:"",active:true});
+        S.tx.push({id:uid(),accountId:acc2,date:x.date,payee:x.payee,amount:x.amount,catId:c||null,subId:sb||null,status:x.status,note:x.note,mode:""});n++});
+      closeSheet();regAcc=acc2;regF="all";regQ="";view="reg";commit();toast(`${n} opération${n>1?"s":""} importée${n>1?"s":""}. Solde du compte : ${fmt(balance(acc2))}`)}};
+  draw()}
 async function handleImport(file){
+  if(/\.json$/i.test(file.name)){let d;try{d=JSON.parse(await file.text())}catch(e){toast("Ce fichier .json est illisible.");return}
+    if(d&&Array.isArray(d.transactions)){mmexSheet(d);return}
+    if(d&&d.accounts&&d.tx){toast("C'est un fichier de données PognonPILOT : ouvre-le avec « Ouvrir mon fichier ».");return}
+    toast("Ce fichier .json n'est pas un export Money Manager Ex.");return}
   let rows;
   try{if(/\.csv$/i.test(file.name)||file.type==="text/csv"){rows=parseCSV(await file.text())}
     else{if(!window.XLSX){toast("Le lecteur Excel n'a pas pu se charger. Essaie avec un .csv.");return}
@@ -1287,7 +1329,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="14";
+const APP_VERSION="15";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
