@@ -833,7 +833,7 @@ function repRange(){
   if(r.L){const [y,m]=r.from.split("-").map(Number);r.pfrom=iso(new Date(y,m-1-r.L,1));r.pto=iso(new Date(y,m-1,0))}
   else{const a=new Date(r.from+"T12:00"),b=new Date(r.to+"T12:00"),days=Math.round((b-a)/864e5)+1;r.pfrom=iso(new Date(a.getTime()-days*864e5));r.pto=iso(new Date(a.getTime()-864e5))}
   return r}
-function evoRange(r){if(rep.evoMode==="same")return{from:r.from,to:r.to};const Y=new Date().getFullYear(),f=rep.evoFrom||`${Y-1}-01-01`,t=rep.evoTo||today();return f<=t?{from:f,to:t}:{from:t,to:f}}
+function evoRange(r){return{from:r.from,to:r.to};const Y=new Date().getFullYear(),f=rep.evoFrom||`${Y-1}-01-01`,t=rep.evoTo||today();return f<=t?{from:f,to:t}:{from:t,to:f}}
 const accMatch=t=>rep.accMode==="all"||rep.accSel.includes(t.accountId);
 const payMatch=t=>rep.payMode==="all"||rep.paySel.includes(t.payee);
 const catMatch=t=>rep.catMode==="all"||rep.catSel.includes(t.catId||"__none");
@@ -894,9 +894,7 @@ function renderRep(){
   ${rep.drill?`<div class="drillbar"><button class="fpill" data-act="undrill" aria-pressed="false">${pillIco("list")}Toutes les catégories</button><span>${catBadge(rep.drill,"sm")}<b>${esc(rep.drill.name)}</b> · détail par sous-catégorie</span></div>`:""}
   <div class="reprow"><div class="panel" style="flex:3 1 480px">
    <div class="evohead"><div><h2>Évolution</h2><div class="cat">Du ${fdate(e.from)} au ${fdate(e.to)}${gran!==rep.gran?" · affichage par année, la période est trop longue pour un détail mensuel":""}</div></div>
-    <div class="evoctl">${sel("r-evomode",[["same","Même période que le rapport"],["custom","Période personnalisée"]],rep.evoMode)}
-     ${rep.evoMode==="custom"?`<input class="inp" type="date" id="r-evofrom" value="${e.from}" aria-label="Évolution du"><input class="inp" type="date" id="r-evoto" value="${e.to}" aria-label="Évolution au">`:""}
-     ${sel("r-gran",[["month","Par mois"],["year","Par année"]],rep.gran)}</div></div>
+    <div class="evoctl">${sel("r-gran",[["month","Par mois"],["year","Par année"]],rep.gran)}</div></div>
    <div class="legend"><span style="--c:var(--rev)">Revenus</span><span style="--c:var(--dep)">Dépenses</span></div><div class="chart">${barChart(b)}</div></div>
   <div class="panel" style="flex:2 1 300px"><h2>Répartition des dépenses</h2>${parts.length?donut(parts,tot.dep,"Répartition des dépenses de la période"):'<div class="empty">Aucune dépense sur cette sélection.</div>'}</div></div>
   ${rep.group==="all"?`<div class="tablewrap"><table class="rep"><thead><tr><th>Date</th><th>Tiers et catégorie</th><th>Compte</th><th class="r">Montant</th></tr></thead><tbody>
@@ -1394,7 +1392,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="22";
+const APP_VERSION="24";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
