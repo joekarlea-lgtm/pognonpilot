@@ -351,6 +351,37 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .herocard>*{min-width:0;max-width:100%}
 .kpi,.acard,.fichebal>div{overflow:hidden}
 @media (max-width:720px){main{padding-bottom:110px}}
+.hhero{margin-bottom:6px}.hhero .herocard{grid-column:auto}
+.hsec{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 10px}
+.hsec h2{display:flex;align-items:center;gap:10px;margin:0;font-size:17px}
+.hsec .ico{width:32px;height:32px;border-radius:10px}.hsec .ico svg{width:17px;height:17px}
+.hband{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 0 6px;scrollbar-width:none}
+.hband::-webkit-scrollbar{display:none}
+.hcard{all:unset;box-sizing:border-box;cursor:pointer;scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;gap:12px;align-items:center;min-width:0}
+.hcard:hover{border-color:var(--accent)}.hcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hup,.hop{flex:0 0 min(80%,340px)}
+.hcard .ht{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hcard .ht b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}
+.hcard .ht small{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcard .due{align-self:flex-start;margin-top:3px}
+.hcard .hday{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.hcard .ham{font-weight:700;font-size:15px;white-space:nowrap}
+.hacc{flex:0 0 min(46%,220px);flex-direction:column;align-items:stretch;gap:8px}
+.hacc .top{display:flex;justify-content:space-between;align-items:center}
+.hacc .ini{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-weight:800;color:#fff}
+.hacc .ty{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.hacc .ty svg{width:14px;height:14px}
+.hacc .nm{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hacc .bal{display:block;font-size:19px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;overflow:hidden}
+.hempty{padding:4px 2px}
+.h30 .chart svg{display:block;width:100%;max-height:240px}
+.h30tot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.h30tot div{background:var(--surface-2);border-radius:14px;padding:10px;min-width:0;overflow:hidden}
+.h30tot span{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);font-weight:600}
+.h30tot span svg{width:14px;height:14px}
+.h30tot b{display:block;font-size:15.5px;margin-top:4px;white-space:nowrap;overflow:hidden}
+@media (min-width:900px){.hup,.hop{flex-basis:calc((100% - 20px)/3)}.hacc{flex-basis:calc((100% - 20px)/3)}}
+@media (max-width:720px){.dnew{display:none}}
 </style>
 
 </head>
@@ -608,57 +639,48 @@ function render(){
 }
 const banner=()=>fileBanner()+(S.sample?`<div class="banner"><span><b>Données d'exemple.</b> Explore librement, puis pars d'un fichier vierge pour saisir tes vrais comptes.</span><button class="btn small" data-act="reset">Commencer avec mes comptes</button></div>`:"");
 
+function homeAccs(){const ok=id=>{const a=accById(id);return a&&!a.closed};
+  if(Array.isArray(S.homeAccs))return S.homeAccs.filter(ok);
+  const since=iso(new Date(Date.now()-90*864e5)),n={};S.tx.forEach(t=>{if(t.date>=since)n[t.accountId]=(n[t.accountId]||0)+1});
+  return active().filter(a=>a.type==="Courant").sort((x,y)=>(n[y.id]||0)-(n[x.id]||0)).slice(0,3).map(a=>a.id)}
+function homeAccSheet(){const sel=new Set(homeAccs());
+  const draw=()=>{openSheet(`<h2>Comptes affichés sur l'accueil</h2><div class="cat" style="margin-bottom:12px">Coche les comptes à suivre dans le bandeau « Mes comptes ».</div>
+   ${TYPES.map(ty=>{const l=active().filter(a=>a.type===ty);return l.length?`<div class="eyebrow" style="margin:12px 0 6px">${ty}</div><div class="chips">${l.map(a=>`<button class="pick" data-hacc="${a.id}" aria-pressed="${sel.has(a.id)}"><span class="sq" style="background:${a.color}"></span>${esc(a.name)}</button>`).join("")}</div>`:""}).join("")}
+   <div class="actions"><div class="row"></div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="hacc-ok">Enregistrer</button></div></div>`);
+   modal.querySelectorAll("[data-hacc]").forEach(e=>e.onclick=()=>{const id=e.dataset.hacc;sel.has(id)?sel.delete(id):sel.add(id);e.setAttribute("aria-pressed",sel.has(id))});
+   document.getElementById("hacc-ok").onclick=()=>{S.homeAccs=active().map(a=>a.id).filter(id=>sel.has(id));closeSheet();commit()}};draw()}
 function renderDash(){
   const acts=active(),total=S.accounts.reduce((s,a)=>s+balance(a.id),0);
-  const now=new Date(),ym=today().slice(0,7);
-  const monthTx=S.tx.filter(t=>t.date.startsWith(ym));
-  const {rev:inc,dep}=netSplit(monthTx);
-  const pend=S.tx.filter(t=>t.status!=="R").length;
-  // évolution de l'avoir total sur 30 jours
+  const now=new Date();
   const pts=[];for(let i=30;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=iso(d);pts.push(S.accounts.reduce((s,a)=>s+balanceAt(a.id,k),0))}
   const d30=pts[pts.length-1]-pts[0];
   const mn=Math.min(...pts),mx=Math.max(...pts),rg=mx-mn||1,X=i=>i*(320/30),Y=v=>12+70*(1-(v-mn)/rg);
   const line=pts.map((v,i)=>`${i?"L":"M"}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
-  // 6 mois
-  const months=[];for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    const r=netSplit(S.tx.filter(t=>t.date.startsWith(k)));months.push({k,label:MONTHS[d.getMonth()],rev:r.rev,dep:r.dep})}
-  // répartition des dépenses du mois
-  let parts=Object.entries(netSplit(monthTx,catName).groups).map(([n,o])=>[n,o.dep]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
-  if(parts.length>6){const rest=parts.slice(5).reduce((s,x)=>s+x[1],0);parts=[...parts.slice(0,5),["Autres",rest]]}
-  const C=2*Math.PI*60;let off=0;
-  const arcs=parts.map(([n,v],i)=>{const L=dep?v/dep*C:0;const el=`<circle cx="75" cy="75" r="60" stroke="var(--c${n==="Autres"?5:i%5})" stroke-dasharray="${L.toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}"><title>${esc(n)} ${fmt(v)}</title></circle>`;off+=L;return el}).join("");
-  // dernières opérations groupées par jour
-  const last=sorted(S.tx.filter(t=>!t.transferId||t.amount<0)).slice(0,7);let lastDay="";
-  const ops=last.map(t=>{const h=t.date!==lastDay?`<div class="daysep">${dayLabel(t.date)}</div>`:"";lastDay=t.date;
-    return h+`<button class="oprow" data-tx="${t.id}">${badge(t)}<span class="tx"><b>${esc(t.payee)}</b><span>${esc(t.transferId?"Entre mes comptes":catLabel(t))}</span></span><span class="am num ${t.transferId?"":t.amount<0?"":"pos"}">${t.transferId?fmt(-t.amount):(t.amount>0?"+":"")+fmt(t.amount)}</span></button>`}).join("");
-  const cards=acts.slice().sort((a,b)=>Math.abs(balance(b.id))-Math.abs(balance(a.id))).slice(0,8);
-  const mxIO=Math.max(inc,dep,1);
   const firstRun=!S.accounts.length?`<div class="banner"><span><b>Bienvenue.</b> Ouvre ton fichier de données PognonPILOT, ou commence par créer tes comptes.</span><span class="row"><button class="btn small primary" data-act="open">Ouvrir mon fichier</button><button class="btn small" data-act="newacc">Créer un compte</button></span></div>`:"";
-  const Q=(m,ic,l)=>`<button data-quick="${m}"><span>${ic}</span>${l}</button>`;
+  const sec=(ic,tint,title,link)=>`<div class="hsec"><h2 data-i="1"><span class="ico t${tint}">${svgIco(ic)}</span>${title}</h2>${link||""}</div>`;
+  // à venir : 3 prochaines échéances
+  const up=upcoming(62).slice(0,3);
+  const upBand=up.length?`${sec("calendar",1,"À venir",'<button class="link" data-view="rec">Échéancier</button>')}<div class="hband">${up.map(r=>{const d=dueInfo(r),a=accById(r.accountId);return`<button class="hcard hup" data-recedit="${r.id}">${recBadge(r)}<span class="ht"><b>${esc(r.label)}</b><small>${esc(a?a.name:"")}</small><span class="due ${d.cls}">${d.txt}</span></span><span class="ham num ${r.amount>0?"pos":""}">${r.amount>0?"+":""}${fmt(r.amount)}</span></button>`}).join("")}</div>`:"";
+  // mes comptes
+  const ha=homeAccs().map(accById);
+  const accBand=`${sec("bank",3,"Mes comptes",'<button class="link" data-act="homeaccs">Choisir</button>')}${ha.length?`<div class="hband">${ha.map(a=>{const b=balance(a.id);return`<button class="hcard hacc" data-accfiche="${a.id}"><span class="top"><span class="ini" style="background:${a.color}">${esc((a.bank||a.name)[0]||"?")}</span><span class="ty">${svgIco(a.type==="Courant"?"card":a.type==="Épargne"?"piggy":"trend")}${esc(a.type)}</span></span><span class="nm">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></button>`}).join("")}</div>`:'<div class="cat hempty">Aucun compte choisi. Touche « Choisir » pour en ajouter.</div>'}`;
+  // opérations des 3 derniers jours (glissants)
+  const d3=iso(new Date(Date.now()-2*864e5)),td=today();
+  const rec3=sorted(S.tx.filter(t=>t.date>=d3&&t.date<=td&&(!t.transferId||t.amount<0)));
+  const opBand=`${sec("list",0,"3 derniers jours",'<button class="link" data-view="reg">Tout voir</button>')}${rec3.length?`<div class="hband">${rec3.map(t=>`<button class="hcard hop" data-tx="${t.id}">${badge(t)}<span class="ht"><b>${esc(t.payee)}</b><small>${esc(t.transferId?"Entre mes comptes":catLabel(t))}</small><span class="hday">${dayLabel(t.date)}</span></span><span class="ham num ${t.transferId?"":t.amount>0?"pos":""}">${t.transferId?fmt(-t.amount):(t.amount>0?"+":"")+fmt(t.amount)}</span></button>`).join("")}</div>`:'<div class="cat hempty">Aucune opération ces 3 derniers jours.</div>'}`;
+  // 30 derniers jours glissants, par semaine
+  const start=new Date(Date.now()-29*864e5),wk=[];for(let i=0;i<30;i+=7){const a=new Date(start.getTime()+i*864e5),z=new Date(start.getTime()+Math.min(i+6,29)*864e5);const f=iso(a),t=iso(z);const r=netSplit(S.tx.filter(x=>x.date>=f&&x.date<=t));wk.push({label:f.slice(8,10)+"/"+f.slice(5,7),rev:r.rev,dep:r.dep})}
+  const T30=netSplit(S.tx.filter(x=>x.date>=iso(start)&&x.date<=td)),s30=T30.rev-T30.dep;
+  const chart=`${sec("bars",2,"30 derniers jours",'<button class="link" data-view="rep">Rapports</button>')}<section class="panel h30">
+   <div class="h30tot num"><div><span>${svgIco("up")}Revenus</span><b class="pos">+${fmt(T30.rev)}</b></div><div><span>${svgIco("down")}Dépenses</span><b>${T30.dep?"−":""}${fmt(T30.dep)}</b></div><div><span>${svgIco("scale")}Solde</span><b class="${s30<0?"neg":"pos"}">${s30>0?"+":""}${fmt(s30)}</b></div></div>
+   <div class="legend"><span style="--c:var(--rev)">Revenus</span><span style="--c:var(--dep)">Dépenses</span><span class="cat" style="margin-left:auto">par semaine</span></div><div class="chart">${barChart(wk)}</div></section>`;
   main.innerHTML=`${banner()}${firstRun}
-  <div class="head"><div><div class="eyebrow">${now.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div><h1>Bonjour</h1></div><button class="btn primary" data-act="newtx">+ Nouvelle opération</button></div>
-  <div class="dgrid">
-   <section class="herocard"><div><div class="lab">Avoir total · ${acts.length} compte${acts.length>1?"s":""} actif${acts.length>1?"s":""}</div><div class="big num">${fmt(total)}</div>
+  <div class="head"><div><div class="eyebrow">${now.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div><h1>Bonjour</h1></div><button class="btn primary dnew" data-act="newtx">+ Nouvelle opération</button></div>
+  <div class="hhero"><section class="herocard"><div><div class="lab">Avoir total · ${acts.length} compte${acts.length>1?"s":""} actif${acts.length>1?"s":""}</div><div class="big num">${fmt(total)}</div>
      <div class="num" style="display:flex;gap:10px;align-items:center;font-size:14px"><span class="pill ${d30<0?"down":""}">${d30>=0?"+":""}${fmt(d30)}</span><span style="color:var(--hero-mut)">sur 30 jours</span></div></div>
     <svg role="img" aria-label="Évolution de l'avoir total sur 30 jours" width="320" height="96" viewBox="0 0 320 96"><defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--hero-line)" stop-opacity=".45"/><stop offset="1" stop-color="var(--hero-line)" stop-opacity="0"/></linearGradient></defs>
-     <path d="${line} L320 96 L0 96 Z" fill="url(#hg)"/><path d="${line}" fill="none" stroke="var(--hero-line)" stroke-width="2.5" stroke-linejoin="round"/><circle cx="320" cy="${Y(pts[30]).toFixed(1)}" r="5" fill="var(--hero-fg)"/></svg></section>
-   <section class="panel mcard"><h2 style="margin:0">${now.toLocaleDateString("fr-FR",{month:"long"}).replace(/^./,c=>c.toUpperCase())}</h2>
-    <div class="mrow"><span class="mlab">${kic("up",2)}Revenus</span><b class="num pos">+${fmt(inc)}</b></div><div class="mbar"><i style="width:${(inc/mxIO*100).toFixed(1)}%;background:var(--rev)"></i></div>
-    <div class="mrow"><span class="mlab">${kic("down",1)}Dépenses</span><b class="num">${dep?"−":""}${fmt(dep)}</b></div><div class="mbar"><i style="width:${(dep/mxIO*100).toFixed(1)}%;background:var(--dep)"></i></div>
-    <div class="cat">Taux d'épargne <b style="color:var(--fg)">${inc>0?((inc-dep)/inc*100).toLocaleString("fr-FR",{maximumFractionDigits:1})+" %":"—"}</b> · ${pend} opération${pend>1?"s":""} à rapprocher</div></section>
-  </div>
-  <div class="quick">${Q("dep",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>',"Dépense")}${Q("rev",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',"Revenu")}${Q("vir",svgIco("transfer"),"Virement")}${Q("rep",'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20v-8M11 20V5M17 20v-5M3 20h18"/></svg>',"Rapports")}</div>
-  ${upcomingCard()}
-  ${cards.length?`<div class="accgrid">${cards.map(a=>{const b=balance(a.id);return`<button class="acard" data-accfiche="${a.id}"><span class="top"><span class="ini" style="background:${a.color}">${esc((a.bank||a.name)[0]||"?")}</span><span class="ty">${esc(a.type)}</span></span><span><span class="nm" style="display:block">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></span></button>`}).join("")}</div>`:""}
-  <div class="dgrid">
-   <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="margin:0">Où part l'argent</h2><span class="cat">${now.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</span></div>
-    ${parts.length?`<div class="donutwrap"><svg role="img" aria-label="Répartition des dépenses du mois" width="150" height="150" viewBox="0 0 150 150"><g transform="rotate(-90 75 75)" fill="none" stroke-width="20"><circle cx="75" cy="75" r="60" stroke="var(--surface-2)"/>${arcs}</g>
-     <text x="75" y="73" text-anchor="middle" font-size="17" font-weight="800" fill="var(--fg)">${esc(fmt(dep).replace(/,\d\d/,""))}</text><text x="75" y="91" text-anchor="middle" font-size="11" fill="var(--muted)">dépensés</text></svg>
-     <div class="dleg">${parts.map(([n,v],i)=>`<div><i style="background:var(--c${n==="Autres"?5:i%5})"></i><span>${esc(n)}</span><b class="num">${fmt(v)}</b></div>`).join("")}</div></div>`:`<div class="empty">Aucune dépense ce mois-ci.</div>`}</section>
-   <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><h2 style="margin:0">Dernières opérations</h2><button class="link" data-view="reg">Tout voir</button></div>
-    ${ops||`<div class="empty">Aucune opération pour l'instant.</div>`}</section>
-  </div>
-  <section class="panel"><h2>Revenus et dépenses, 6 derniers mois</h2><div class="legend"><span style="--c:var(--rev)">Revenus</span><span style="--c:var(--dep)">Dépenses</span></div><div class="chart">${barChart(months)}</div></section>`;
+     <path d="${line} L320 96 L0 96 Z" fill="url(#hg)"/><path d="${line}" fill="none" stroke="var(--hero-line)" stroke-width="2.5" stroke-linejoin="round"/><circle cx="320" cy="${Y(pts[30]).toFixed(1)}" r="5" fill="var(--hero-fg)"/></svg></section></div>
+  ${upBand}${accBand}${opBand}${chart}`;
 }
 function barChart(m){
   const W=560,H=230,L=52,B=28,T=10,max=Math.max(1,...m.flatMap(x=>[x.rev,x.dep]));
@@ -1005,7 +1027,7 @@ function decorateTitles(root){
   const m=TITLE_ICONS.find(([re])=>re.test(n));if(!m)return;h.classList.add("h2i");h.insertAdjacentHTML("afterbegin",`<span class="ico sm t${m[2]}">${svgIco(m[1])}</span>`)})}
 new MutationObserver(()=>decorateTitles()).observe(document.getElementById("main"),{childList:true,subtree:true});
 /* Montants : réduction automatique de la taille pour tenir dans leur case (petits écrans, grande police Android). */
-const FIT_SEL=".acard .bal,.kpi .v,.fichebal b,.herocard .big,.hero .big,.regsum b,.regsum .num,.mstat b,.mstat .num,.donut b,.donut .num,.ficheh .num,.bigamt";
+const FIT_SEL=".hacc .bal,.h30tot b,.acard .bal,.kpi .v,.fichebal b,.herocard .big,.hero .big,.regsum b,.regsum .num,.mstat b,.mstat .num,.donut b,.donut .num,.ficheh .num,.bigamt";
 function fitNums(){document.querySelectorAll(FIT_SEL).forEach(el=>{el.style.fontSize="";if(!el.offsetParent)return;let fs=parseFloat(getComputedStyle(el).fontSize),n=0;while(el.scrollWidth>el.clientWidth+1&&fs>11&&n++<40){fs-=1;el.style.fontSize=fs+"px"}})}
 let fitRaf=0;const fitSoon=()=>{cancelAnimationFrame(fitRaf);fitRaf=requestAnimationFrame(fitNums)};
 new MutationObserver(fitSoon).observe(document.body,{childList:true,subtree:true});addEventListener("resize",fitSoon);if(document.fonts)document.fonts.ready.then(fitSoon);
@@ -1392,7 +1414,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="24";
+const APP_VERSION="25";
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
@@ -1429,7 +1451,7 @@ async function openPicked(){
   const f=await h.getFile();if(await openJson(f,h))return}
 async function openJson(file,handle){
   let o;try{o=JSON.parse(await file.text());if(!o.accounts||!o.tx||!o.categories)throw 0}catch(e){toast("Ce fichier n'est pas un fichier de données PognonPILOT.");return false}
-  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},tx:o.tx}));
+  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},...(Array.isArray(o.homeAccs)?{homeAccs:o.homeAccs}:{}),tx:o.tx}));
     if(handle)await linkHandle(handle);dirty=false;lastSaved=Math.max(Date.now(),file.lastModified||0);cache();view="dash";render();
     toast(`${handle?"Fichier lié":"Fichier ouvert"} : ${S.accounts.length} comptes, ${S.tx.length} opérations`)};
   if(dirty&&S.accounts.length)confirmSheet("Remplacer les données actuelles ?","Tes dernières modifications n'ont pas été enregistrées. Elles seront perdues si tu ouvres ce fichier.","Ouvrir quand même",go);else await go();
@@ -1506,6 +1528,7 @@ document.addEventListener("click",async e=>{
       const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
       if(await offerFile(`pognonpilot-rapport-${r.from}-au-${r.to}.xlsx`,new Blob([buf]),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))toast("Rapport exporté");break}
     case"newacc":accSheet();break;
+    case"homeaccs":homeAccSheet();break;
     case"reset":confirmSheet("Partir d'un fichier vierge ?","Les données d'exemple seront effacées. Tu gardes les catégories proposées et un premier compte courant à renommer.","Effacer l'exemple",()=>{S=blank();dirty=true;cache();view="acc";render()});break;
     case"save":saveJson();break;
     case"open":openPicked();break;
