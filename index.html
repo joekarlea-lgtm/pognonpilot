@@ -1277,7 +1277,17 @@ function mmexSheet(d){
   const payName=id=>alnum(pays[id])?pays[id]:L.pay[id]||"";
   const mainId=+Object.entries(hits).sort((a,b)=>b[1]-a[1])[0][0];const nameOf=id=>accs[id]?.NAME||(L.acc[id]&&accById(L.acc[id])?accById(L.acc[id]).name:`compte n°${id}`);const mainName=nameOf(mainId);
   const compact=x=>norm(x).replace(/[^A-Z0-9]/g,"");
-  const bestAcc=name=>{const n=compact(name);let best=null,sc=0;S.accounts.forEach(a=>{const m=compact(a.name);let k=0;while(k<n.length&&k<m.length&&n[k]===m[k])k++;const s=(n===m?1000:k)-(a.closed?.5:0);if(s>sc){sc=s;best=a}});return sc>=6?best.id:""};
+  // rapprochement d'un nom Money Manager Ex avec un compte : mots communs, mots manquants, et repère entre crochets obligatoirement identique
+  const toks=x=>norm(String(x).replace(/\[[^\]]*\]/g," ")).replace(/\./g,"").split(/[^A-Z0-9]+/).filter(Boolean);
+  const brk=x=>{const m=String(x).match(/\[([^\]]+)\]/);return m?compact(m[1]):""};
+  const pre=(a,b)=>{let k=0;while(k<a.length&&k<b.length&&a[k]===b[k])k++;return k};
+  const DF={};S.accounts.forEach(a=>new Set(toks(a.name)).forEach(t=>DF[t]=(DF[t]||0)+1));const W=t=>1/(DF[t]||1);
+  const accScore=(name,a)=>{if(compact(name)===compact(a.name))return 1000-(a.closed?.5:0);const N=toks(name),M=toks(a.name),bn=brk(name),bm=brk(a.name);
+    const shT=N.filter(t=>M.includes(t));if(shT.length<2)return -1e9;const sum=l=>l.reduce((x,t)=>x+W(t),0);
+    let s=10*sum(shT)-2*sum(N.filter(t=>!M.includes(t)))-sum(M.filter(t=>!N.includes(t)))-(a.closed?.5:0);if(bn||bm)s+=bn&&bm&&pre(bn,bm)>=2?5:-20;return s};
+  const bestAcc=name=>{let best=null,sc=-1e9;S.accounts.forEach(a=>{const s=accScore(name,a);if(s>sc){sc=s;best=a}});
+    if(best&&sc>0)return best.id;const n=compact(name);best=null;sc=0;S.accounts.forEach(a=>{const s=pre(n,compact(a.name))-(a.closed?.5:0);if(s>sc){sc=s;best=a}});return sc>=6?best.id:""};
+  const exactAcc=(name,id)=>{const a=accById(id);return!!a&&compact(a.name)===compact(name)};
   const mainGuess=(L.acc[mainId]&&accById(L.acc[mainId])?L.acc[mainId]:"")||bestAcc(mainName)||defaultAcc();
   const sign=t=>t.TRANSCODE==="Withdrawal"?-1:1;
   const catById=id=>S.categories.find(c=>c.id===id);
@@ -1322,7 +1332,7 @@ function mmexSheet(d){
     const real=gList.filter(g=>!g.pseudo),pseudo=gList.filter(g=>g.pseudo);
     openSheet(`<h2>Importer depuis Money Manager Ex</h2>
     <div class="fichebal"><div>${kh("list",3,"Opérations")}<b class="num">${list.length}</b><span class="cat">du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])}</span></div><div>${kh("scale",0,"Dont")}<b class="num" style="font-size:16px">${nVir} virement${nVir>1?"s":""} · ${nSplit} ventilée${nSplit>1?"s":""}</b><span class="cat">${list.length-nVir-nSplit} opérations simples${nTr?` dont ${nTr} en catégorie TRANSFERT, hors revenus et dépenses`:""}</span></div></div>
-    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Compte importé <span class="cat">(dans Money Manager Ex : ${esc(mainName)})</span></label><select class="inp" id="mm-acc">${accOptions(acc,true)}</select></div></div>
+    <div class="form" style="margin-top:14px"><div class="field full"><label for="mm-acc">Compte importé <span class="cat">(dans Money Manager Ex : ${esc(mainName)})</span></label><select class="inp" id="mm-acc">${accOptions(acc,true)}</select>${acc===mainGuess&&!exactAcc(mainName,acc)&&!(L.acc[mainId]===acc)?`<span class="cat" id="mm-accwarn" style="color:var(--warn,#B07A00)">Aucun compte ne porte exactement ce nom : vérifie que c'est le bon.</span>`:""}</div></div>
     <div class="fichebal" style="margin-top:12px"><div>${kh("wallet",0,"Solde actuel")}<b class="num">${fmt(balance(acc))}</b><span class="cat">dont solde de départ ${fmt(a.initial)}, conservé</span></div><div>${kh("check",2,"Solde après import")}<b class="num">${fmt(balance(acc)+delta)}</b><span class="cat">${ex?`${ex} opération${ex>1?"s":""} déjà sur ce compte`:"aucune opération existante"}</span></div></div>
     ${real.length?`<div class="eyebrow" style="margin:16px 0 8px">Virements : autre compte concerné</div><div class="form">${real.map(gRow).join("")}</div>`:""}
     ${pseudo.length?`<div class="eyebrow" style="margin:16px 0 8px">Opérations en catégorie TRANSFERT : convertir en virements ?</div><div class="cat" style="margin:-2px 0 8px">Choisis le compte qui correspond à chaque tiers pour créer de vrais virements des deux côtés.</div><div class="form">${pseudo.map(gRow).join("")}</div>`:""}
@@ -1414,7 +1424,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="27";
+const APP_VERSION="28";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
