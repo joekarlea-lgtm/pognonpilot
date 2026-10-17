@@ -211,6 +211,8 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
   table.reg td.p{grid-column:2;grid-row:1;min-width:0}
   table.reg td.s{grid-column:1;grid-row:1/3;align-self:center}
   table.reg td.m{grid-column:3;grid-row:1}
+  table.reg td.md{display:none}
+  table.reg td.m .mdm{display:block;margin-top:4px}table.reg td.m .mdm .mtag{margin:0}
   table.reg td.b{grid-column:3;grid-row:2;font-size:12.5px;color:var(--muted)}
   .regwrap{border-radius:var(--r)}
 }
@@ -326,6 +328,9 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .pp-head{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 10px 4px}
 .pp-empty{font-size:13.5px;color:var(--muted);padding:10px}
 
+.mdm{display:none}table.reg td.md{width:1%;white-space:nowrap;padding-right:2px}table.reg td.md .mtag{margin-left:0}
+.tnote{margin-top:4px;padding-left:8px;border-left:2px solid var(--line);font-size:13px;line-height:1.4;color:color-mix(in srgb,var(--fg) 78%,var(--muted));overflow-wrap:anywhere}.tnote div+div{margin-top:2px}
+textarea.tnoteinp{resize:vertical;min-height:42px;line-height:1.4;font:inherit}
 .mtag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px 1px 5px;border-radius:99px;font-size:11.5px;font-weight:600;vertical-align:1px;margin-left:4px;white-space:nowrap}.mtag .pi{width:12px;height:12px}
 
 .lblrow{display:flex!important;justify-content:space-between;align-items:center;gap:8px}.lblrow .link{font-size:13px;display:inline-flex;align-items:center;gap:5px}.lblrow .pi{width:14px;height:14px}
@@ -427,7 +432,7 @@ const KEY="pognonpilot.v1";
 const TYPES=["Courant","Épargne","Placements","Collection"];
 const TYPE_HINT={"Courant":"Comptes de tous les jours et cartes","Épargne":"Livrets et comptes d'épargne","Placements":"Assurance-vie, PEA, titres","Collection":"Valeur des objets de collection"};
 const OLD_TYPES={"Compte courant":"Courant","Carte de crédit":"Courant","Espèces":"Courant","Prêt":"Courant","Livret / Épargne":"Épargne","Placement":"Placements"};
-function migrate(d){d.accounts.forEach(a=>{if(!TYPES.includes(a.type))a.type=OLD_TYPES[a.type]||"Courant"});d.tx.forEach(t=>{if(t.status!=="R")t.status=""});d.categories.forEach(c=>delete c.kind);ensureIcons(d);if(!Array.isArray(d.recurring))d.recurring=[];return d}
+function migrate(d){d.tx.forEach(t=>{if(t.note)t.note=normNote(t.note)});(d.recurring||[]).forEach(r=>{if(r.note)r.note=normNote(r.note)});d.accounts.forEach(a=>{if(!TYPES.includes(a.type))a.type=OLD_TYPES[a.type]||"Courant"});d.tx.forEach(t=>{if(t.status!=="R")t.status=""});d.categories.forEach(c=>delete c.kind);ensureIcons(d);if(!Array.isArray(d.recurring))d.recurring=[];return d}
 const COLORS=["#0B6E5A","#2F5DA8","#C0632F","#7A4FA0","#A3842A","#3E7F94","#B04A6B","#5B6770"];
 const eur=new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"});
 const fmt=n=>eur.format((Math.round(n*100)/100)||0);
@@ -501,6 +506,7 @@ const catLabel=t=>{if(t.transferId)return"Virement";if(isSplit(t))return`Ventil�
 const payeeNames=()=>[...new Set([...(S.payees||[]).filter(p=>p.active).map(p=>p.name),...S.tx.filter(t=>!t.transferId).map(t=>t.payee)])].sort((a,b)=>a.localeCompare(b,"fr"));
 
 /* ventilation : une opération peut porter plusieurs parts {catId,subId,amount,note} dont la somme = montant */
+const normNote=v=>String(v||"").replace(/\r/g,"").split(/\n|►/).map(x=>x.trim().replace(/\s*\+$/,"").trim()).filter(Boolean).join("\n");
 const isSplit=t=>!!(t&&t.splits&&t.splits.length>1);
 const expandSplits=list=>list.flatMap(t=>isSplit(t)?t.splits.map((p,i)=>({...t,id:t.id+"#"+i,catId:p.catId,subId:p.subId,amount:p.amount,note:p.note||t.note,splits:null,_part:i+1,_of:t.splits.length})):[t]);
 const partLabel=p=>catLabel({catId:p.catId,subId:p.subId});
@@ -737,10 +743,10 @@ function renderReg(){
   <div class="toolbar"><input class="inp search" id="q" type="search" placeholder="Rechercher un tiers, une catégorie…" value="${esc(regQ)}"><span class="cat hint-pc">Clic sur le carré pour marquer une opération rapprochée <b>R</b></span></div>
   <div class="fpills">${pill("all","Toutes")}${pill("nr","Non rapprochées")}${pill("month","Ce mois-ci")}${pill("dep","Dépenses")}${pill("rev","Revenus")}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&missingOf(t).length).length;return n||regF==="inc"?`<button class="fpill finc" data-regf="inc" aria-pressed="${regF==="inc"}">${pillIco("pending")}À compléter · ${n}</button>`:""})()}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&t.doubt).length;return n||regF==="ver"?`<button class="fpill fver" data-regf="ver" aria-pressed="${regF==="ver"}">${pillIco("alert")}À vérifier · ${n}</button>`:""})()}<span class="regtotal num">${list.length} opération${list.length>1?"s":""} · <b class="${sum<0?"neg":"pos"}">${sum>0?"+":""}${fmt(sum)}</b></span></div>
   <div class="cat hint-mob">Glisse une opération vers la droite pour la rapprocher, vers la gauche pour la supprimer.</div>
-  <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th>Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
-  ${(()=>{let ld="";return list.slice(0,400).map(t=>{const h=t.date!==ld?`<tr class="dayrow"><td colspan="5">${dayLabel(t.date)}</td></tr>`:"";ld=t.date;const mi=missingOf(t);return h+`<tr data-tx="${t.id}"${t.doubt?` class="averif" title="À vérifier : ${esc(t.doubt)}"`:mi.length?` class="incomplete" title="À compléter : ${mi.join(", ")}"`:""}><td class="s"><button class="chip ${t.status}" data-status="${t.id}" aria-label="${t.status==="R"?"Annuler le rapprochement":"Marquer rapprochée"}">${t.status==="R"?"R":"·"}</button></td><td class="d num">${fdate(t.date)}</td>
-   <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}${mi.length?`<span class="incbadge">À compléter : ${esc(mi.join(", "))}</span>`:""}</div><div class="cat">${isSplit(t)?`<span class="vtag">${pillIco("split")}Ventilée</span> ${esc(splitSummary(t))}`:esc(catLabel(t))}${t.mode?" "+modeTag(t.mode):""}${t.note?" · "+esc(t.note):""}</div>${t.doubt?`<div class="whyv">${pillIco("alert")}<span>${esc(t.doubt)}</span></div>`:""}</div></div></td>
-   <td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
+  <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th>Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Mode</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
+  ${(()=>{let ld="";return list.slice(0,400).map(t=>{const h=t.date!==ld?`<tr class="dayrow"><td colspan="6">${dayLabel(t.date)}</td></tr>`:"";ld=t.date;const mi=missingOf(t);return h+`<tr data-tx="${t.id}"${t.doubt?` class="averif" title="À vérifier : ${esc(t.doubt)}"`:mi.length?` class="incomplete" title="À compléter : ${mi.join(", ")}"`:""}><td class="s"><button class="chip ${t.status}" data-status="${t.id}" aria-label="${t.status==="R"?"Annuler le rapprochement":"Marquer rapprochée"}">${t.status==="R"?"R":"·"}</button></td><td class="d num">${fdate(t.date)}</td>
+   <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}${mi.length?`<span class="incbadge">À compléter : ${esc(mi.join(", "))}</span>`:""}</div><div class="cat">${isSplit(t)?`<span class="vtag">${pillIco("split")}Ventilée</span> ${esc(splitSummary(t))}`:esc(catLabel(t))}</div>${t.note?`<div class="tnote">${t.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}${t.doubt?`<div class="whyv">${pillIco("alert")}<span>${esc(t.doubt)}</span></div>`:""}</div></div></td>
+   <td class="md r">${t.mode?modeTag(t.mode):""}</td><td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}${t.mode?`<div class="mdm">${modeTag(t.mode)}</div>`:""}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
   </tbody></table>`:`<div class="empty">Aucune opération${q?" ne correspond à cette recherche":""}. Ajoute-en une avec « Nouvelle opération » ou importe un relevé dans Fichiers.</div>`}</div>`;
   bindSwipe();
   const qi=document.getElementById("q");qi.addEventListener("input",()=>{regQ=qi.value;const pos=qi.selectionStart;renderReg();const n=document.getElementById("q");n.focus();n.setSelectionRange(pos,pos)});
@@ -1097,7 +1103,7 @@ function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const 
     <div class="field"><label for="r-mode">Mode de paiement</label><select class="inp" id="r-mode">${modeOptions(src.mode||"")}</select></div>
     <div class="field"><label for="r-freq">Fréquence</label><select class="inp" id="r-freq">${FREQS.map(f=>`<option value="${f[0]}" ${(src.freq||"M")===f[0]?"selected":""}>${f[1]}</option>`).join("")}</select></div>
     <div class="field"><label for="r-next">Prochaine échéance</label><input class="inp" type="date" id="r-next" required value="${src.next||today()}"></div>
-    <div class="field full"><label for="r-note">Note</label><input class="inp" id="r-note" value="${esc(src.note||"")}" placeholder="Facultatif"></div>
+    <div class="field full"><label for="r-note">Note</label><textarea class="inp tnoteinp" id="r-note" rows="${Math.max(1,(src.note||"").split("\n").length)}" placeholder="Facultatif (une ligne par note)">${esc(src.note||"")}</textarea></div>
     ${r?`<label class="cat full" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="r-active" ${r.active?"checked":""}> Récurrente active</label>`:""}
    </form>
    <div class="actions">${r?'<button class="btn danger" id="delRec">Supprimer</button>':""}<div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveRec">Enregistrer</button></div></div>`);
@@ -1114,7 +1120,7 @@ function recSheet(id,from){const r=id?S.recurring.find(x=>x.id===id):null;const 
      let rparts=null;if(rEd&&!document.getElementById("rsplitField").hidden){if(!(amt>0)){toast("Indique le montant prévu avant de ventiler.");return}const rr=collectSplits(rEd,amt,mode==="dep"?-1:1);if(rr===false)return;if(rr.parts)rparts=rr.parts;else fc.value=rr.single}
      const [catId,subId]=(fc.value||"|").split("|");
      const o={label,amount:mode==="dep"?-Math.abs(amt):Math.abs(amt),accountId:document.getElementById("r-acc").value,payee:pf.value.trim(),catId:rparts?null:(catId||null),subId:rparts?null:(subId||null),splits:rparts,
-       freq:document.getElementById("r-freq").value,next,day:+next.slice(8,10),note:document.getElementById("r-note").value.trim(),mode:document.getElementById("r-mode").value,active:r?document.getElementById("r-active").checked:true};
+       freq:document.getElementById("r-freq").value,next,day:+next.slice(8,10),note:normNote(document.getElementById("r-note").value),mode:document.getElementById("r-mode").value,active:r?document.getElementById("r-active").checked:true};
      if(r)Object.assign(r,o);else S.recurring.push({id:uid(),...o});closeSheet();commit();toast(r?"Récurrente modifiée":"Récurrente créée")};
    document.getElementById("saveRec").onclick=save;document.getElementById("recf").onsubmit=e=>{e.preventDefault();save()};
    const d=document.getElementById("delRec");if(d)d.onclick=()=>confirmSheet(`Supprimer « ${r.label} » ?`,"Les opérations déjà saisies restent dans tes comptes.","Supprimer",()=>{S.recurring=S.recurring.filter(x=>x!==r);commit();toast("Récurrente supprimée")})};
@@ -1177,7 +1183,7 @@ function attachPayeePicker(input){if(!input||input.dataset.pp)return;input.datas
     else if(e.key==="Enter"&&sel>=0){e.preventDefault();pick(sel)}else if(e.key==="Escape"){e.stopPropagation();close()}})}
 /* ---------- fenêtres ---------- */
 const modal=document.getElementById("modal");
-function openSheet(html){modal.innerHTML=`<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;const f=modal.querySelector("input:not([type=hidden]),select");f&&f.focus()}
+function openSheet(html){modal.innerHTML=`<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;modal.querySelectorAll("textarea.tnoteinp").forEach(x=>{const g=()=>{x.style.height="auto";x.style.height=(x.scrollHeight+2)+"px"};g();x.addEventListener("input",g)});const f=modal.querySelector("input:not([type=hidden]),select");f&&f.focus()}
 function closeSheet(){modal.innerHTML="";recPending=null}
 function confirmSheet(title,text,okLabel,onOk){openSheet(`<h2>${esc(title)}</h2><p style="color:var(--muted);margin:0">${esc(text)}</p><div class="actions"><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="okc">${esc(okLabel)}</button></div></div>`);document.getElementById("okc").onclick=()=>{closeSheet();onOk()}}
 function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
@@ -1204,7 +1210,7 @@ function txSheet(id,presetMode,pre){
      ${isV?"":`<div class="field" id="catField" ${splitInit?"hidden":""}><label for="f-cat" class="lblrow">Catégorie <button type="button" class="link" id="toSplit">${pillIco("split")}Ventiler</button></label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,tv?`${tv.catId||""}|${tv.subId||""}`:"")}</select></div><div class="field full" id="splitField" ${splitInit?"":"hidden"}><label class="lblrow">Ventilation sur plusieurs catégories <button type="button" class="link" id="unSplit">Annuler la ventilation</button></label><div id="splitHost"></div></div>`}
      <div class="field"><label for="f-mode">Mode de paiement</label><select class="inp" id="f-mode">${modeOptions(tv&&tv.mode!=null?tv.mode:(isV?"Virement":""))}</select></div>
      <div class="field"><label for="f-st">Statut</label><select class="inp" id="f-st"><option value="">Non rapprochée</option><option value="R" ${(base?.status)==="R"?"selected":""}>Rapprochée (R)</option></select></div>
-     <div class="field full"><label for="f-note">Note</label><input class="inp" id="f-note" value="${esc(base?.note||"")}" placeholder="Facultatif"></div>
+     <div class="field full"><label for="f-note">Note</label><textarea class="inp tnoteinp" id="f-note" rows="${Math.max(1,(base?.note||"").split("\n").length)}" placeholder="Facultatif (une ligne par note)">${esc(base?.note||"")}</textarea></div>
     </form>
     <div class="actions"><div class="row">${t?'<button class="btn danger" id="delTx">Supprimer</button>':""}${t&&!t.transferId?'<button class="btn" id="mkRec">'+pillIco("calendar")+'Rendre récurrente</button>':""}</div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
     modal.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{if(spEd&&!document.getElementById("splitField").hidden)splitInit=spEd.get();mode=b.dataset.mode;draw()});
@@ -1220,7 +1226,7 @@ function txSheet(id,presetMode,pre){
     const save=()=>{
       const amt=parseAmount(document.getElementById("f-amt").value);
       if(!(amt>0)){toast("Indique un montant supérieur à zéro.");return}
-      const pm=document.getElementById("f-mode").value,acc=document.getElementById("f-acc").value,date=document.getElementById("f-date").value,st=document.getElementById("f-st").value,note=document.getElementById("f-note").value.trim();
+      const pm=document.getElementById("f-mode").value,acc=document.getElementById("f-acc").value,date=document.getElementById("f-date").value,st=document.getElementById("f-st").value,note=normNote(document.getElementById("f-note").value);
       if(!date){toast("Choisis une date.");return}
       let parts=null;if(mode!=="vir"&&spEd&&!document.getElementById("splitField").hidden){const r=collectSplits(spEd,amt,mode==="dep"?-1:1);if(r===false)return;if(r.parts)parts=r.parts;else document.getElementById("f-cat").value=r.single}
       const dv=t?(t.doubt||pair?.doubt||""):"",dvo=dv?{doubt:dv}:{};
@@ -1319,7 +1325,7 @@ function mmexSheet(d){
   const catById=id=>S.categories.find(c=>c.id===id);
   const isTrCat=n=>softNorm(String(n||"").split(":")[0])==="TRANSFERT";
   const dbt=t=>typeof t.PP_DOUTE==="string"?t.PP_DOUTE.trim():"";
-  const conv=t=>{const date=String(t.TRANSDATE||"").slice(0,10),note=[t.NOTES,t.TRANSACTIONNUMBER].filter(Boolean).join(" · ").replace(/^►\s*/,""),status=t.STATUS==="R"?"R":"";
+  const conv=t=>{const date=String(t.TRANSDATE||"").slice(0,10),note=normNote([t.NOTES,t.TRANSACTIONNUMBER].filter(Boolean).join("\n")),status=t.STATUS==="R"?"R":"";
     if(t.TRANSCODE==="Transfer"){const out=t.ACCOUNTID===mainId;const amt=out?-(+t.TRANSAMOUNT):(+t.TOTRANSAMOUNT||+t.TRANSAMOUNT);return{kind:"vir",okey:"a"+(out?t.TOACCOUNTID:t.ACCOUNTID),date,amount:r2(amt),status,note,doubt:dbt(t)}}
     const dsum=Array.isArray(t.DIVISION)?t.DIVISION.reduce((x,p)=>x+(+p.AMOUNT||0),0):0,dk=dsum<0&&(+t.TRANSAMOUNT)>0?-1:1;
     const parts=Array.isArray(t.DIVISION)&&t.DIVISION.length>1?t.DIVISION.map(p=>({cat:cats[p.CATEGORY_ID]||"",amount:r2(sign(t)*dk*(+p.AMOUNT))})):null;
@@ -1471,7 +1477,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="32";
+const APP_VERSION="33";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
