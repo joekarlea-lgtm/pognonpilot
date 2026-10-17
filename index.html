@@ -1414,8 +1414,10 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="25";
-const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext;
+const APP_VERSION="27";
+/* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
+const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
+const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
 const JSON_TYPES=[{description:"Données PognonPILOT",accept:{"application/json":[".json"]}}];
 const idb={_db:null,
   open(){return this._db||(this._db=new Promise((ok,ko)=>{const r=indexedDB.open("pognonpilot",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}))},
@@ -1448,9 +1450,15 @@ function scheduleAutoSave(){
 async function openPicked(){
   if(!FS_OK){document.getElementById("fileJson").click();return}
   let h;try{[h]=await showOpenFilePicker({types:JSON_TYPES,multiple:false})}catch(e){return}
-  const f=await h.getFile();if(await openJson(f,h))return}
+  let f;try{f=await h.getFile()}catch(e){toast(`Impossible d'accéder à « ${h.name} ». Si OneDrive le synchronise, attends la fin puis réessaie.`);return}if(await openJson(f,h))return}
 async function openJson(file,handle){
-  let o;try{o=JSON.parse(await file.text());if(!o.accounts||!o.tx||!o.categories)throw 0}catch(e){toast("Ce fichier n'est pas un fichier de données PognonPILOT.");return false}
+  const ko=m=>{toast(m);return false};let txt,o;
+  try{txt=await file.text()}catch(e){return ko(`Impossible de lire « ${file.name} ». Si OneDrive est en train de le synchroniser, attends la fin (icône verte) puis réessaie avec « Ouvrir mon fichier ».`)}
+  txt=String(txt||"").replace(/^\uFEFF/,"").trim();
+  if(!txt)return ko(`« ${file.name} » est vide sur cet appareil : OneDrive ne l'a sans doute pas encore téléchargé. Attends la fin de la synchronisation puis réessaie.`);
+  try{o=JSON.parse(txt)}catch(e){return ko(`« ${file.name} » est incomplet ou abîmé (${Math.round(txt.length/1024)} Ko lus). Vérifie dans OneDrive qu'il n'existe pas une autre copie plus récente, par exemple « ${file.name.replace(/\.json$/i,"")} (1).json ».`)}
+  if(o&&o.data&&o.data.accounts&&!o.accounts)o=o.data;
+  if(!o||!Array.isArray(o.accounts)||!Array.isArray(o.tx)||!Array.isArray(o.categories))return ko(`« ${file.name} » n'est pas un fichier de données PognonPILOT (il ne contient pas de comptes et d'opérations).`);
   const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},...(Array.isArray(o.homeAccs)?{homeAccs:o.homeAccs}:{}),tx:o.tx}));
     if(handle)await linkHandle(handle);dirty=false;lastSaved=Math.max(Date.now(),file.lastModified||0);cache();view="dash";render();
     toast(`${handle?"Fichier lié":"Fichier ouvert"} : ${S.accounts.length} comptes, ${S.tx.length} opérations`)};
