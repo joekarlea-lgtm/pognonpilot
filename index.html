@@ -328,7 +328,7 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .pp-head{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 10px 4px}
 .pp-empty{font-size:13.5px;color:var(--muted);padding:10px}
 
-.mdm{display:none}table.reg td.md{width:1%;white-space:nowrap;padding-right:2px}table.reg td.md .mtag{margin-left:0}
+.mdm{display:none}.chqn{margin-top:3px;font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}table.reg td.md{width:1%;white-space:nowrap;padding-right:2px}table.reg td.md .mtag{margin-left:0}
 .tnote{margin-top:4px;padding-left:8px;border-left:2px solid var(--line);font-size:13px;line-height:1.4;color:color-mix(in srgb,var(--fg) 78%,var(--muted));overflow-wrap:anywhere}.tnote div+div{margin-top:2px}
 textarea.tnoteinp{resize:vertical;min-height:42px;line-height:1.4;font:inherit}
 .mtag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px 1px 5px;border-radius:99px;font-size:11.5px;font-weight:600;vertical-align:1px;margin-left:4px;white-space:nowrap}.mtag .pi{width:12px;height:12px}
@@ -728,7 +728,7 @@ function renderReg(){
   // solde courant (calculé sur l'ordre chronologique)
   const run={};if(regAcc!=="all"){let b=accById(regAcc).initial;list.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(t=>{b+=t.amount;run[t.id]=b})}
   const q=regQ.trim().toLowerCase();
-  if(q)list=list.filter(t=>(t.payee+" "+(isSplit(t)?splitSummary(t):catLabel(t))+" "+(t.note||"")+" "+(t.mode||"")).toLowerCase().includes(q));
+  if(q)list=list.filter(t=>(t.payee+" "+(isSplit(t)?splitSummary(t):catLabel(t))+" "+(t.note||"")+" "+(t.mode||"")+" "+(t.chq||"")).toLowerCase().includes(q));
   const ym=today().slice(0,7);
   if(regF==="nr")list=list.filter(t=>t.status!=="R");else if(regF==="month")list=list.filter(t=>t.date.startsWith(ym));
   else if(regF==="inc")list=list.filter(t=>missingOf(t).length);else if(regF==="ver")list=list.filter(t=>t.doubt);else if(regF==="dep")list=list.filter(t=>t.amount<0&&!t.transferId);else if(regF==="rev")list=list.filter(t=>t.amount>0&&!t.transferId);
@@ -746,7 +746,7 @@ function renderReg(){
   <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th>Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Mode</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
   ${(()=>{let ld="";return list.slice(0,400).map(t=>{const h=t.date!==ld?`<tr class="dayrow"><td colspan="6">${dayLabel(t.date)}</td></tr>`:"";ld=t.date;const mi=missingOf(t);return h+`<tr data-tx="${t.id}"${t.doubt?` class="averif" title="À vérifier : ${esc(t.doubt)}"`:mi.length?` class="incomplete" title="À compléter : ${mi.join(", ")}"`:""}><td class="s"><button class="chip ${t.status}" data-status="${t.id}" aria-label="${t.status==="R"?"Annuler le rapprochement":"Marquer rapprochée"}">${t.status==="R"?"R":"·"}</button></td><td class="d num">${fdate(t.date)}</td>
    <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}${mi.length?`<span class="incbadge">À compléter : ${esc(mi.join(", "))}</span>`:""}</div><div class="cat">${isSplit(t)?`<span class="vtag">${pillIco("split")}Ventilée</span> ${esc(splitSummary(t))}`:esc(catLabel(t))}</div>${t.note?`<div class="tnote">${t.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}${t.doubt?`<div class="whyv">${pillIco("alert")}<span>${esc(t.doubt)}</span></div>`:""}</div></div></td>
-   <td class="md r">${t.mode?modeTag(t.mode):""}</td><td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}${t.mode?`<div class="mdm">${modeTag(t.mode)}</div>`:""}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
+   <td class="md r">${t.mode?modeTag(t.mode):""}${t.chq?`<div class="chqn">n° ${esc(t.chq)}</div>`:""}</td><td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}${t.mode?`<div class="mdm">${modeTag(t.mode)}${t.chq?`<div class="chqn">n° ${esc(t.chq)}</div>`:""}</div>`:""}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
   </tbody></table>`:`<div class="empty">Aucune opération${q?" ne correspond à cette recherche":""}. Ajoute-en une avec « Nouvelle opération » ou importe un relevé dans Fichiers.</div>`}</div>`;
   bindSwipe();
   const qi=document.getElementById("q");qi.addEventListener("input",()=>{regQ=qi.value;const pos=qi.selectionStart;renderReg();const n=document.getElementById("q");n.focus();n.setSelectionRange(pos,pos)});
@@ -1209,6 +1209,7 @@ function txSheet(id,presetMode,pre){
      ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required></div>`}
      ${isV?"":`<div class="field" id="catField" ${splitInit?"hidden":""}><label for="f-cat" class="lblrow">Catégorie <button type="button" class="link" id="toSplit">${pillIco("split")}Ventiler</button></label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,tv?`${tv.catId||""}|${tv.subId||""}`:"")}</select></div><div class="field full" id="splitField" ${splitInit?"":"hidden"}><label class="lblrow">Ventilation sur plusieurs catégories <button type="button" class="link" id="unSplit">Annuler la ventilation</button></label><div id="splitHost"></div></div>`}
      <div class="field"><label for="f-mode">Mode de paiement</label><select class="inp" id="f-mode">${modeOptions(tv&&tv.mode!=null?tv.mode:(isV?"Virement":""))}</select></div>
+     <div class="field" id="chqField" ${(tv&&tv.mode)==="Chèque"?"":"hidden"}><label for="f-chq">N° de chèque</label><input class="inp num" id="f-chq" inputmode="numeric" autocomplete="off" value="${esc((isV?base:tv)?.chq||"")}" placeholder="Facultatif"></div>
      <div class="field"><label for="f-st">Statut</label><select class="inp" id="f-st"><option value="">Non rapprochée</option><option value="R" ${(base?.status)==="R"?"selected":""}>Rapprochée (R)</option></select></div>
      <div class="field full"><label for="f-note">Note</label><textarea class="inp tnoteinp" id="f-note" rows="${Math.max(1,(base?.note||"").split("\n").length)}" placeholder="Facultatif (une ligne par note)">${esc(base?.note||"")}</textarea></div>
     </form>
@@ -1220,7 +1221,8 @@ function txSheet(id,presetMode,pre){
       document.getElementById("unSplit").onclick=()=>{const rows=spEd?spEd.get():[];const k=(rows.find(r=>r.catKey)||{}).catKey||"";const sel=document.getElementById("f-cat");if(k&&[...sel.options].some(o=>o.value===k))sel.value=k;splitInit=null;sF.hidden=true;cF.hidden=false};
       document.getElementById("f-amt").addEventListener("input",()=>{if(spEd)spEd.refresh()})}
     const pf=document.getElementById("f-payee"),fcEl=document.getElementById("f-cat");attachPayeePicker(pf);
-    const fm=document.getElementById("f-mode");if(pf&&fm)pf.addEventListener("input",()=>{if(fm.value)return;const m=payeeDefaultMode(pf.value.trim());if(m){fm.value=m;fm.classList.add("prefill");setTimeout(()=>fm.classList.remove("prefill"),900)}});let autoCat=!tv;
+    const fm=document.getElementById("f-mode"),syncChq=()=>{document.getElementById("chqField").hidden=fm.value!=="Chèque"};fm.addEventListener("change",syncChq);
+    if(pf&&fm)pf.addEventListener("input",()=>{if(fm.value)return;const m=payeeDefaultMode(pf.value.trim());if(m){fm.value=m;syncChq();fm.classList.add("prefill");setTimeout(()=>fm.classList.remove("prefill"),900)}});let autoCat=!tv;
     if(pf&&fcEl){fcEl.addEventListener("change",()=>{autoCat=false});pf.addEventListener("input",()=>{if(!autoCat&&fcEl.value)return;const k=payeeDefaultCat(pf.value.trim());
       if(k&&[...fcEl.options].some(o=>o.value===k)){fcEl.value=k;autoCat=true;fcEl.classList.add("prefill");setTimeout(()=>fcEl.classList.remove("prefill"),900)}})}
     const save=()=>{
@@ -1229,7 +1231,7 @@ function txSheet(id,presetMode,pre){
       const pm=document.getElementById("f-mode").value,acc=document.getElementById("f-acc").value,date=document.getElementById("f-date").value,st=document.getElementById("f-st").value,note=normNote(document.getElementById("f-note").value);
       if(!date){toast("Choisis une date.");return}
       let parts=null;if(mode!=="vir"&&spEd&&!document.getElementById("splitField").hidden){const r=collectSplits(spEd,amt,mode==="dep"?-1:1);if(r===false)return;if(r.parts)parts=r.parts;else document.getElementById("f-cat").value=r.single}
-      const dv=t?(t.doubt||pair?.doubt||""):"",dvo=dv?{doubt:dv}:{};
+      const dv=t?(t.doubt||pair?.doubt||""):"",chq=pm==="Chèque"?document.getElementById("f-chq").value.trim():"",dvo={...(dv?{doubt:dv}:{}),...(chq?{chq}:{})};
       // on retire l'ancienne version (et sa jambe de virement)
       if(t){const tid=t.transferId;S.tx=S.tx.filter(x=>x.id!==t.id&&!(tid&&x.transferId===tid))}
       if(mode==="vir"){
@@ -1333,12 +1335,12 @@ function mmexSheet(d){
     // opération simple rangée en catégorie TRANSFERT : virement dont l'autre compte n'était pas suivi dans Money Manager Ex
     const okey=!parts&&isTrCat(cat)?"p"+t.PAYEEID:null;
     const pn=payName(t.PAYEEID),known=!!pn,ukey=known||!(t.PAYEEID>0)?null:"u"+t.PAYEEID;
-    return{kind:"op",okey,ukey,date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:known?pn:"Sans tiers",cat,parts,status,note,mode:typeof t.PP_MODE==="string"?t.PP_MODE:"",doubt:dbt(t)}};
+    return{kind:"op",okey,ukey,date,amount:r2(sign(t)*(+t.TRANSAMOUNT)),payee:known?pn:"Sans tiers",cat,parts,status,note,mode:typeof t.PP_MODE==="string"?t.PP_MODE:"",chq:t.PP_CHQ!=null?String(t.PP_CHQ).trim():"",doubt:dbt(t)}};
   const list=src.map(conv).filter(x=>x.date&&x.amount);
   // groupes « autre compte » : vrais virements (par compte) et opérations TRANSFERT (par tiers)
   const groups={};list.forEach(x=>{if(!x.okey)return;const g=groups[x.okey]||(groups[x.okey]={key:x.okey,n:0,sum:0,pseudo:x.okey[0]==="p",ex:x});g.n++;g.sum+=x.amount});
   Object.values(groups).forEach(g=>{const id=+g.key.slice(1);const pn=payName(id)||pays[id];g.label=g.pseudo?(pn?`Tiers « ${pn} »`:`Tiers n°${id} (nom absent du fichier)`):nameOf(id);
-    const mem=g.pseudo?L.payAcc[id]:L.acc[id];g.guess=mem!==undefined&&(mem===""||accById(mem))?mem:g.pseudo?(payName(id)?bestAcc(payName(id)):""):bestAcc(nameOf(id))});
+    const mem=g.pseudo?L.payAcc[id]:L.acc[id];g.guess=mem!==undefined&&(mem===""||accById(mem))?mem:g.pseudo?(payName(id)?(()=>{const b=bestAcc(payName(id));return b&&exactAcc(payName(id),b)?b:""})():""):bestAcc(nameOf(id))});
   const gList=Object.values(groups).sort((a,b)=>(a.pseudo-b.pseudo)||b.n-a.n);
   const otherMap=Object.fromEntries(gList.map(g=>[g.key,g.guess]));
   const uGroups={};list.forEach(x=>{if(!x.ukey||x.okey)return;const g=uGroups[x.ukey]||(uGroups[x.ukey]={key:x.ukey,n:0,pos:0,ex:[],cats:{}});g.n++;if(x.amount>0)g.pos++;if(g.ex.length<2)g.ex.push(x);g.cats[x.cat]=(g.cats[x.cat]||0)+1});
@@ -1410,7 +1412,7 @@ function mmexSheet(d){
           n++;return}
         const pay=payOf(x);if(S.payees&&pay&&pay!=="Sans tiers"&&!S.payees.some(p=>p.name.toLowerCase()===pay.toLowerCase()))S.payees.push({id:uid(),name:pay,type:"",active:true});
         const pk=k=>{if(String(mapping[k]).startsWith("new|")){const [,cid,sn0]=mapping[k].split("|"),sn=decodeURIComponent(sn0),c=catById(cid);let sb=c.subs.find(x=>softNorm(x.name)===softNorm(sn));if(!sb){sb={id:uid(),name:sn};c.subs.push(sb)}mapping[k]=`${cid}|${sb.id}`}const [c,sb]=(mapping[k]||"|").split("|");return{catId:c||null,subId:sb||null}};
-        const o={id:uid(),accountId:acc2,date:x.date,payee:pay,amount:x.amount,status:x.status,note:x.note,mode:x.okey?"Virement":x.mode||"",...dvo};
+        const o={id:uid(),accountId:acc2,date:x.date,payee:pay,amount:x.amount,status:x.status,note:x.note,mode:x.okey?"Virement":x.mode||"",...(x.chq?{chq:x.chq}:{}),...dvo};
         if(x.parts){o.catId=null;o.subId=null;o.splits=x.parts.map(p=>({...pk(p.cat),amount:p.amount}))}else Object.assign(o,pk(x.cat));
         S.tx.push(o);n++});
       L.acc[mainId]=acc2;gList.forEach(g=>{const id=+g.key.slice(1);if(g.pseudo)L.payAcc[id]=otherMap[g.key]||"";else if(otherMap[g.key])L.acc[id]=otherMap[g.key]});
@@ -1475,9 +1477,9 @@ async function offerFile(filename,data,mime){
   const blob=data instanceof Blob?data:new Blob([data],{type:mime});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return true;
 }
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
-  return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
+  return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="33";
+const APP_VERSION="34";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
