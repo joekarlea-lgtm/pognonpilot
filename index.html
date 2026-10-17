@@ -1359,9 +1359,12 @@ function mmexSheet(d){
   // doublons possibles : même montant à 3 jours près (compte importé), ou sur l'autre compte d'un virement
   const dd=(a,b)=>Math.abs(Date.parse(a)-Date.parse(b))/864e5;
   const isTrOp=t=>!t.transferId&&!isSplit(t)&&softNorm(catById(t.catId)?.name||"")==="TRANSFERT";
-  const plan=(acc)=>{const ex={};S.tx.forEach(t=>{if(t.accountId!==acc)return;const k=kVir(t.date,t.amount);(ex[k]=ex[k]||[]).push(t.id)});
+  const plan=(acc)=>{const ex={};S.tx.forEach(t=>{if(t.accountId!==acc)return;const k=kVir(t.date,t.amount);(ex[k]=ex[k]||[]).push(t)});
     const took=new Set(),free=t=>!took.has(t.id);
-    const P=list.map(x=>{const k=kVir(x.date,x.amount),dup=!!(ex[k]&&ex[k].length);if(dup)took.add(ex[k].shift());return{x,vir:!!asVir(x),dup}});
+    // un virement du fichier se rapproche d'abord d'un virement existant, une opération d'une opération ; ensuite seulement de ce qui reste
+    const P=list.map(x=>({x,vir:!!asVir(x),dup:false}));
+    const take=(p,ok)=>{const L=ex[kVir(p.x.date,p.x.amount)];const i=L?L.findIndex(ok):-1;if(i<0)return;took.add(L[i].id);L.splice(i,1);p.dup=true};
+    P.forEach(p=>take(p,t=>!!t.transferId===p.vir));P.forEach(p=>{if(!p.dup)take(p,()=>true)});
     const nearIn=(aid,date,amt,same)=>S.tx.find(t=>t.accountId===aid&&free(t)&&Math.abs(t.amount-amt)<.005&&(same||t.date!==date)&&dd(t.date,date)<=3);
     const single=t=>t.transferId&&!S.tx.some(u=>u.transferId===t.transferId&&u.id!==t.id);
     P.forEach(p=>{if(p.dup)return;const x=p.x;
@@ -1479,7 +1482,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="34";
+const APP_VERSION="35";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
