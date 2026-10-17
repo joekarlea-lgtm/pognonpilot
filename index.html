@@ -635,7 +635,7 @@ function topParts(list,key){let parts=Object.entries(netSplit(list,key||catName)
   if(parts.length>6){const rest=parts.slice(5).reduce((s,x)=>s+x[1],0);parts=[...parts.slice(0,5),["Autres",rest]]}return parts}
 /* opération incomplète : tous les champs sauf la note doivent être renseignés */
 function missingOf(t){const m=[];if(!t.date)m.push("date");if(!t.amount)m.push("montant");if(!accById(t.accountId))m.push("compte");
-  if(!t.transferId){const p=String(t.payee||"").trim();if(!p||p==="Sans tiers"||!/[A-Za-z0-9]/.test(p))m.push("tiers");
+  if(!t.transferId){const p=String(t.payee||"").trim();if(!p||!/[A-Za-z0-9]/.test(p))m.push("tiers");
     const chk=(ci,si)=>{const c=S.categories.find(x=>x.id===ci);if(!c)return"catégorie";if(c.subs&&c.subs.length&&!c.subs.some(x=>x.id===si))return"sous-catégorie";return""};
     if(isSplit(t)){const e=t.splits.map(x=>chk(x.catId,x.subId)).filter(Boolean);if(e.length)m.push(e.includes("catégorie")?"catégorie (ventilation)":"sous-catégorie (ventilation)")}else{const e=chk(t.catId,t.subId);if(e)m.push(e)}}
   if(!t.mode)m.push("mode de paiement");return m}
@@ -1471,7 +1471,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="31";
+const APP_VERSION="32";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
