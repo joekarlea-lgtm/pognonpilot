@@ -249,6 +249,9 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
 .rk{flex:none;width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-size:13px;font-weight:800;border:1.5px dashed var(--muted);color:var(--muted);cursor:pointer;box-sizing:border-box;margin-left:auto}
 .rk:hover{border-color:var(--accent);color:var(--accent)}.rk.on{border:0;background:#E3F7EE;color:#0B7A52}.rk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .accrow .rk{margin-left:4px}
+.chip.allr{vertical-align:middle;margin-right:6px;box-shadow:inset 0 0 0 2px var(--accent)}.chip.allr.mix{background:transparent;color:var(--accent)}.chip.allr.none{background:transparent}
+.regall-mob{display:none}@media (max-width:820px){.regall-mob{display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:13px;color:var(--muted);font-weight:600}.regall-mob .chip{margin:0}}
+.toast{display:flex;align-items:center;gap:14px}.toastbtn{all:unset;cursor:pointer;font-weight:800;text-decoration:underline;padding:2px 4px}
 .regmore{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 12px;padding:16px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}.regmore span{width:100%;text-align:center}@media (min-width:821px){.regmore span{width:auto;margin-right:6px}}
 .accgrp{--c:#2450E6;position:relative;margin-bottom:22px;padding:16px 16px 18px 20px;border:1px solid var(--line);border-radius:24px;background:color-mix(in srgb,var(--c) 5%,var(--bg));overflow:hidden}
 .accgrp::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
@@ -458,7 +461,7 @@ const r2=n=>Math.round(n*100)/100;
 const fdate=iso=>{const [y,m,d]=iso.split("-");return `${d}/${m}/${y}`};
 const MONTHS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 
-let showClosed=false,regF="all",regLim=400,regLimKey="";
+let showClosed=false,regF="all",regLim=400,regLimKey="",regIds=[];
 let S, view="dash", regAcc="all", regQ="", dirty=false, lastSaved=null, fileHandle=null;
 
 /* ---------- données d'exemple ---------- */
@@ -746,7 +749,7 @@ function renderReg(){
   const ym=today().slice(0,7);
   if(regF==="nr")list=list.filter(t=>t.status!=="R");else if(regF==="month")list=list.filter(t=>t.date.startsWith(ym));
   else if(regF==="inc")list=list.filter(t=>missingOf(t).length);else if(regF==="ver")list=list.filter(t=>t.doubt);else if(regF==="dep")list=list.filter(t=>t.amount<0&&!t.transferId);else if(regF==="rev")list=list.filter(t=>t.amount>0&&!t.transferId);
-  {const k=regAcc+"|"+regF+"|"+regQ;if(k!==regLimKey){regLimKey=k;regLim=400}}list=sorted(list);const sum=list.reduce((s,t)=>s+t.amount,0);
+  {const k=regAcc+"|"+regF+"|"+regQ;if(k!==regLimKey){regLimKey=k;regLim=400}}list=sorted(list);regIds=[...new Set(list.map(t=>String(t.id).split("#")[0]))];const nR=list.filter(t=>t.status==="R").length,allSt=!list.length?"":nR===list.length?"all":nR?"mix":"none",allChip=`<button class="chip allr ${allSt==="all"?"R":allSt}" data-regall="1" title="${allSt==="all"?"Tout est rapproché · clic pour tout retirer":"Clic pour tout rapprocher"} (opérations affichées)" aria-label="Rapprocher ou non toutes les opérations affichées">${allSt==="all"?"R":allSt==="mix"?"–":"·"}</button>`;const sum=list.reduce((s,t)=>s+t.amount,0);
   const PI={all:"list",nr:"pending",month:"calendar",dep:"down",rev:"up",inc:"pending",ver:"alert"};const pill=(k,l)=>`<button class="fpill" data-regf="${k}" aria-pressed="${regF===k}">${pillIco(PI[k])}${l}</button>`;
   const a=regAcc!=="all"?accById(regAcc):null;
   main.innerHTML=`${banner()}
@@ -756,8 +759,8 @@ function renderReg(){
   ${a?`<div class="regsum num"><div>${kh("wallet",0,"Solde")}<b class="${balance(a.id)<0?"neg":""}">${fmt(balance(a.id))}</b></div><div>${kh("check",0,"Solde rapproché")}<b>${fmt(balance(a.id,true))}</b></div></div>`:""}
   <div class="toolbar"><input class="inp search" id="q" type="search" placeholder="Rechercher un tiers, une catégorie…" value="${esc(regQ)}"><span class="cat hint-pc">Clic sur le carré pour marquer une opération rapprochée <b>R</b></span></div>
   <div class="fpills">${pill("all","Toutes")}${pill("nr","Non rapprochées")}${pill("month","Ce mois-ci")}${pill("dep","Dépenses")}${pill("rev","Revenus")}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&missingOf(t).length).length;return n||regF==="inc"?`<button class="fpill finc" data-regf="inc" aria-pressed="${regF==="inc"}">${pillIco("pending")}À compléter · ${n}</button>`:""})()}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&t.doubt).length;return n||regF==="ver"?`<button class="fpill fver" data-regf="ver" aria-pressed="${regF==="ver"}">${pillIco("alert")}À vérifier · ${n}</button>`:""})()}<span class="regtotal num">${list.length} opération${list.length>1?"s":""} · <b class="${sum<0?"neg":"pos"}">${sum>0?"+":""}${fmt(sum)}</b></span></div>
-  <div class="cat hint-mob">Glisse une opération vers la droite pour la rapprocher, vers la gauche pour la supprimer.</div>
-  <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th>Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Mode</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
+  <div class="regall-mob">${list.length?allChip+" <span>Tout</span>":""}</div><div class="cat hint-mob">Glisse une opération vers la droite pour la rapprocher, vers la gauche pour la supprimer.</div>
+  <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th style="white-space:nowrap">${allChip}Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Mode</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
   ${(()=>{let ld="";return list.slice(0,regLim).map(t=>{const h=t.date!==ld?`<tr class="dayrow"><td colspan="6">${dayLabel(t.date)}</td></tr>`:"";ld=t.date;const mi=missingOf(t);return h+`<tr data-tx="${t.id}"${t.doubt?` class="averif" title="À vérifier : ${esc(t.doubt)}"`:mi.length?` class="incomplete" title="À compléter : ${mi.join(", ")}"`:""}><td class="s"><button class="chip ${t.status}" data-status="${t.id}" aria-label="${t.status==="R"?"Annuler le rapprochement":"Marquer rapprochée"}">${t.status==="R"?"R":"·"}</button></td><td class="d num">${fdate(t.date)}</td>
    <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}${mi.length?`<span class="incbadge">À compléter : ${esc(mi.join(", "))}</span>`:""}</div><div class="cat">${isSplit(t)?`<span class="vtag">${pillIco("split")}Ventilée</span> ${esc(splitSummary(t))}`:esc(catLabel(t))}</div>${t.note?`<div class="tnote">${t.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}${t.doubt?`<div class="whyv">${pillIco("alert")}<span>${esc(t.doubt)}</span></div>`:""}</div></div></td>
    <td class="md r">${t.mode?modeTag(t.mode):""}${t.chq?`<div class="chqn">n° ${esc(t.chq)}</div>`:""}</td><td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}${t.mode?`<div class="mdm">${modeTag(t.mode)}${t.chq?`<div class="chqn">n° ${esc(t.chq)}</div>`:""}</div>`:""}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
@@ -1201,6 +1204,13 @@ const modal=document.getElementById("modal");
 function openSheet(html){modal.innerHTML=`<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;modal.querySelectorAll("textarea.tnoteinp").forEach(x=>{const g=()=>{x.style.height="auto";x.style.height=(x.scrollHeight+2)+"px"};g();x.addEventListener("input",g)});const f=modal.querySelector("input:not([type=hidden]),select");f&&f.focus()}
 function closeSheet(){modal.innerHTML="";recPending=null}
 function confirmSheet(title,text,okLabel,onOk){openSheet(`<h2>${esc(title)}</h2><p style="color:var(--muted);margin:0">${esc(text)}</p><div class="actions"><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="okc">${esc(okLabel)}</button></div></div>`);document.getElementById("okc").onclick=()=>{closeSheet();onOk()}}
+function toastUndo(msg,undo){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.innerHTML=`<span>${esc(msg)}</span><button type="button" class="toastbtn">Annuler</button>`;document.body.appendChild(t);const tm=setTimeout(()=>t.remove(),7000);t.querySelector("button").onclick=()=>{clearTimeout(tm);t.remove();undo()}}
+function regAllR(){const ids=new Set(regIds);const sel=S.tx.filter(t=>ids.has(t.id));if(!sel.length)return;const tids=new Set(sel.filter(t=>t.transferId).map(t=>t.transferId));
+  const aff=S.tx.filter(t=>ids.has(t.id)||(t.transferId&&tids.has(t.transferId)));const toR=!sel.every(t=>t.status==="R"),n=sel.length,a=regAcc!=="all"?accById(regAcc):null;
+  const where=(a?a.name:"tous les comptes")+(regQ.trim()?` (recherche « ${regQ.trim()} »)`:regF!=="all"?" (filtre en cours)":"");
+  confirmSheet(toR?`Rapprocher ${n} opération${n>1?"s":""} ?`:`Retirer le R de ${n} opération${n>1?"s":""} ?`,`Les ${n} opération${n>1?"s":""} affichée${n>1?"s":""} de ${where} seront ${toR?"marquées R":"remises en non rapprochées"}. Pour les virements, l'autre côté suit.`,toR?"Rapprocher":"Retirer le R",()=>{
+    const prev=new Map(aff.map(t=>[t.id,t.status]));aff.forEach(t=>t.status=toR?"R":"");commit();
+    toastUndo(`${n} opération${n>1?"s":""} ${toR?"rapprochée"+(n>1?"s":""):": R retiré"}`,()=>{S.tx.forEach(t=>{if(prev.has(t.id))t.status=prev.get(t.id)});commit();toast("Modification annulée")})})}
 function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 
 function catOptions(kind,sel){return S.categories.map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
@@ -1497,7 +1507,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="37";
+const APP_VERSION="38";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
@@ -1572,6 +1582,7 @@ document.addEventListener("click",async e=>{
   const tp=e.target.closest("[data-togpayee]");if(tp){const p=S.payees.find(x=>x.id===tp.dataset.togpayee);p.active=!p.active;commit();return}
   const dp=e.target.closest("[data-delpayee]");if(dp){const p=S.payees.find(x=>x.id===dp.dataset.delpayee);confirmSheet(`Supprimer « ${p.name} » ?`,"Le tiers est retiré de la liste. Les opérations déjà saisies gardent leur tiers.","Supprimer",()=>{S.payees=S.payees.filter(x=>x!==p);commit()});return}
   if(swipeBlock&&Date.now()-swipeBlock<400){return}
+  const ra=e.target.closest("[data-regall]");if(ra){e.stopPropagation();regAllR();return}
   const rm=e.target.closest("[data-regmore]");if(rm){const y=window.scrollY;regLim=rm.dataset.regmore==="all"?1e9:regLim+400;renderReg();window.scrollTo(0,y);return}
   const fp=e.target.closest("[data-regf]");if(fp){regF=fp.dataset.regf;renderReg();return}
   const rk=e.target.closest("[data-acrk]");if(rk){e.stopPropagation();const a=accById(rk.dataset.acrk);if(a){if(a.rkDate)delete a.rkDate;else a.rkDate=today();commit();toast(a.rkDate?"Compte marqué rapproché":"Rapprochement retiré")}return}
