@@ -249,8 +249,11 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
 .rk{flex:none;width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-size:13px;font-weight:800;border:1.5px dashed var(--muted);color:var(--muted);cursor:pointer;box-sizing:border-box;margin-left:auto}
 .rk:hover{border-color:var(--accent);color:var(--accent)}.rk.on{border:0;background:#E3F7EE;color:#0B7A52}.rk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .accrow .rk{margin-left:4px}
-.blogo{height:36px;min-width:36px;max-width:150px;padding:4px;border-radius:11px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:none;overflow:hidden;align-self:flex-start}.blogo img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block;min-width:0}
-.bankh .blogo{height:32px;max-width:170px}.acard .blogo{height:34px}.blogo.big{height:44px;min-width:60px;max-width:200px;border:1px solid var(--line)}
+.blogo{height:44px;min-width:44px;max-width:170px;padding:0;background:transparent;display:inline-flex;align-items:center;justify-content:flex-start;box-sizing:border-box;flex:none;align-self:flex-start}.blogo img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block;min-width:0}
+.blogo .lgd{display:none}:root[data-theme="dark"] .blogo .lgl{display:none}:root[data-theme="dark"] .blogo .lgd{display:block}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .blogo .lgl{display:none}:root:not([data-theme="light"]) .blogo .lgd{display:block}}
+.blogo.fiche{height:56px;min-width:56px;max-width:200px}.hhead>.blogo.pglogo{height:56px;min-width:56px;max-width:200px;grid-row:1/3;grid-column:1;align-self:center}
+.bankh .blogo{height:40px;max-width:200px}.acard .blogo{height:44px}.hacc .blogo{height:40px}.blogo.big{height:56px;min-width:60px;max-width:220px;padding:6px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}@media (max-width:820px){.acard .blogo{height:38px;max-width:130px}.bankh .blogo{height:34px}}
 .logoup{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
 .bankgrp{border:1px dashed color-mix(in srgb,var(--c) 35%,var(--line));border-radius:18px;padding:12px;margin-bottom:12px;background:color-mix(in srgb,var(--surface) 40%,transparent)}
 .bankh{display:flex;align-items:center;gap:10px;margin:0 2px 10px;min-width:0}.bankh .ini{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;flex:none}
@@ -799,7 +802,19 @@ function renderReg0(){
 
 const bankKey=a=>String(a.bank||"").trim().toLowerCase();
 const logoOf=a=>(S.logos||{})[bankKey(a)]||"";
-const accIni=(a,st="")=>{const l=logoOf(a);return l?`<span class="blogo" style="${st}" title="${esc(a.bank||"")}"><img src="${l}" alt="${esc(a.bank||"")}"></span>`:`<span class="ini" style="background:${a.color};${st}">${esc((a.bank||a.name)[0]||"?")}</span>`};
+const LOGO_DARK={};let logoDarkBusy=false;
+// thème sombre : les parties sombres du logo qui touchent la transparence passent en clair (le reste ne bouge pas)
+function logoDarkOf(src){return new Promise(ok=>{const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext("2d");x.drawImage(im,0,0);
+  const D=x.getImageData(0,0,c.width,c.height),d=D.data,W=c.width,H=c.height,seen=new Uint8Array(W*H),q=[];let tr=0;
+  const L=i=>0.2126*d[i*4]+0.7152*d[i*4+1]+0.0722*d[i*4+2],sat=i=>Math.max(d[i*4],d[i*4+1],d[i*4+2])-Math.min(d[i*4],d[i*4+1],d[i*4+2]);
+  const dark=i=>d[i*4+3]>=90&&((sat(i)<40&&L(i)<175)||(L(i)<75&&d[i*4+2]>=d[i*4]));
+  for(let i=0;i<W*H;i++)if(d[i*4+3]<40){seen[i]=1;q.push(i);tr++}
+  if(tr<W*H*0.05)return ok(src);
+  let changed=0;while(q.length){const i=q.pop(),X=i%W,Y=(i/W)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=X+dx,ny=Y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const j=ny*W+nx;if(seen[j])continue;seen[j]=1;if(dark(j)){const l=L(j),t=sat(j)<40?Math.min(1,Math.max(0,(255-l)/255)):1,k=1-t;d[j*4]=Math.round(232*t+d[j*4]*k);d[j*4+1]=Math.round(236*t+d[j*4+1]*k);d[j*4+2]=Math.round(245*t+d[j*4+2]*k);if(sat(j)<40){const v=Math.round(255-l*0.9);d[j*4]=Math.min(232,v);d[j*4+1]=Math.min(236,v);d[j*4+2]=Math.min(245,v+4)}changed++;q.push(j)}}}
+  if(!changed)return ok(src);x.putImageData(D,0,0);ok(c.toDataURL("image/png"))}catch(e){ok(src)}};im.onerror=()=>ok(src);im.src=src})}
+async function ensureLogoDark(){if(logoDarkBusy)return;logoDarkBusy=true;let n=0;for(const [k,v] of Object.entries(S.logos||{})){if(LOGO_DARK[k]&&LOGO_DARK[k].src===v)continue;LOGO_DARK[k]={src:v,d:await logoDarkOf(v)};n++}logoDarkBusy=false;if(n)render()}
+const logoImgs=a=>{const k=bankKey(a),l=logoOf(a),dk=LOGO_DARK[k]&&LOGO_DARK[k].src===l?LOGO_DARK[k].d:l;return`<img class="lgl" src="${l}" alt="${esc(a.bank||"")}"><img class="lgd" src="${dk}" alt="${esc(a.bank||"")}">`};
+const accIni=(a,st="")=>{const l=logoOf(a);if(l&&!(LOGO_DARK[bankKey(a)]&&LOGO_DARK[bankKey(a)].src===l))setTimeout(ensureLogoDark,0);return l?`<span class="blogo" style="${st}" title="${esc(a.bank||"")}">${logoImgs(a)}</span>`:`<span class="ini" style="background:${a.color};${st}">${esc((a.bank||a.name)[0]||"?")}</span>`};
 function accCard(a,inBank){const b=balance(a.id);return`<button class="acard${inBank?" inbank":""}" data-accfiche="${a.id}">${inBank==="multi"?`<span class="top">${accIni(a)}</span>`:inBank?"":`<span class="top">${accIni(a)}${logoOf(a)?"":`<span class="ty">${esc(a.bank||a.type)}</span>`}</span>`}<span><span class="nm" style="display:block">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></span><span class="afoot"><span class="rkwhen">${a.rkDate?`<span class="rkl">Rapproché le </span>${fdate(a.rkDate)}`:""}</span>${rkChip(a)}</span></button>`}
 const rkChip=a=>`<span class="rk ${a.rkDate?"on":""}" role="button" tabindex="0" data-acrk="${a.id}" title="${a.rkDate?"Compte rapproché le "+fdate(a.rkDate)+" · clic pour retirer":"Non rapproché · clic pour valider"}" aria-label="${a.rkDate?"Compte rapproché":"Compte non rapproché"}">${a.rkDate?"R":"–"}</span>`;
 
@@ -831,7 +846,7 @@ function accFiche(id){const a=accById(id);if(!a)return;const b=balance(a.id),ym=
   const mt=S.tx.filter(t=>t.accountId===id&&t.date.startsWith(ym));const inn=mt.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0),out=Math.abs(mt.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
   const pts=[];const n=new Date();for(let i=12;i>=0;i--){const d=new Date(n.getFullYear(),n.getMonth()-i+1,0);pts.push(balanceAt(id,i?iso(d):today()))}
   const last=sorted(S.tx.filter(t=>t.accountId===id)).slice(0,5);
-  openSheet(`<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">${accIni(a,"width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none")}
+  openSheet(`<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">${logoOf(a)?`<span class="blogo fiche">${logoImgs(a)}</span>`:accIni(a,"width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none")}
    <div style="min-width:0"><h2 style="margin:0">${esc(a.name)}${a.closed?'<span class="xfer">CLÔTURÉ</span>':""}</h2><div class="cat">${esc([a.bank,a.type,a.opened?"ouvert le "+fdate(a.opened):""].filter(Boolean).join(" · "))}</div></div></div>
    <div class="fichebal"><div>${kh("wallet",0,"Solde")}<b class="num ${b<0?"neg":""}">${fmt(b)}</b></div><div>${kh("check",0,"Rapproché")}<b class="num">${fmt(balance(id,true))}</b></div></div>
    <div class="eyebrow" style="margin:14px 0 4px">Solde sur 12 mois</div>${curve(pts,480,110,"var(--accent)")}
@@ -1102,7 +1117,7 @@ const TITLE_ICONS=[[/^A VENIR|ECHEANCES|EN RETARD|CETTE SEMAINE|CE MOIS-CI|PLUS 
 const PAGE_ICONS={rec:["calendar",1],dash:["home",0],reg:["list",3],acc:["bank",2],rep:["bars",4],cat:["tag",6],file:["doc",5]};
 function decorateTitles(root){
   document.querySelectorAll("#main .head>div:first-child:not([data-i])").forEach(d=>{const h=d.querySelector("h1");if(!h)return;d.dataset.i="1";
-    const m=h.id==="tiers"?["user",1]:PAGE_ICONS[view]||["tag",0];d.classList.add("hhead");d.insertAdjacentHTML("afterbegin",`<span class="ico pg t${m[1]}">${svgIco(m[0])}</span>`)});(root||document).querySelectorAll("#main h2:not([data-i])").forEach(h=>{h.dataset.i="1";const n=norm(h.textContent.trim());
+    const m=h.id==="tiers"?["user",1]:PAGE_ICONS[view]||["tag",0];d.classList.add("hhead");const ra=view==="reg"&&regAcc!=="all"?accById(regAcc):null;d.insertAdjacentHTML("afterbegin",ra&&logoOf(ra)?`<span class="blogo pglogo">${logoImgs(ra)}</span>`:`<span class="ico pg t${m[1]}">${svgIco(m[0])}</span>`)});(root||document).querySelectorAll("#main h2:not([data-i])").forEach(h=>{h.dataset.i="1";const n=norm(h.textContent.trim());
   const m=TITLE_ICONS.find(([re])=>re.test(n));if(!m)return;h.classList.add("h2i");h.insertAdjacentHTML("afterbegin",`<span class="ico sm t${m[2]}">${svgIco(m[1])}</span>`)})}
 new MutationObserver(()=>decorateTitles()).observe(document.getElementById("main"),{childList:true,subtree:true});
 /* Montants : réduction automatique de la taille pour tenir dans leur case (petits écrans, grande police Android). */
@@ -1333,9 +1348,9 @@ function accSheet(id,presetType){
   const save=()=>{const name=document.getElementById("a-name").value.trim();if(!name){toast("Donne un nom au compte.");return}
     const bk=document.getElementById("a-bank").value.trim().toLowerCase();S.logos=S.logos||{};if(newLogo===null){if(bk)delete S.logos[bk]}else if(newLogo){if(bk)S.logos[bk]=newLogo;else{toast("Indique l'établissement pour enregistrer son logo.");return}}
     const o={name,block:document.getElementById("a-block").value.trim(),bank:document.getElementById("a-bank").value.trim(),closed:!!document.getElementById("a-state").value,type:document.getElementById("a-type").value,opened:document.getElementById("a-open").value||null,initial:parseAmount(document.getElementById("a-init").value)||0,color};
-    if(a)Object.assign(a,o);else S.accounts.push({id:uid(),...o});closeSheet();commit();toast(a?"Compte modifié":"Compte créé")};
+    if(a)Object.assign(a,o);else S.accounts.push({id:uid(),...o});closeSheet();commit();ensureLogoDark();toast(a?"Compte modifié":"Compte créé")};
   let newLogo;const lp=document.getElementById("a-logoprev");
-  document.getElementById("a-logo").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const H=96,sc=Math.min(1,H/im.height,320/im.width),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));c.getContext("2d").drawImage(im,0,0,c.width,c.height);newLogo=c.toDataURL("image/png");lp.innerHTML=`<img src="${newLogo}" alt="">`};im.onerror=()=>toast("Image illisible.");im.src=rd.result};rd.readAsDataURL(f)};
+  document.getElementById("a-logo").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const H=160,sc=Math.min(1,H/im.height,480/im.width),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));c.getContext("2d").drawImage(im,0,0,c.width,c.height);newLogo=c.toDataURL("image/png");lp.innerHTML=`<img src="${newLogo}" alt="">`};im.onerror=()=>toast("Image illisible.");im.src=rd.result};rd.readAsDataURL(f)};
   document.getElementById("a-logodel").onclick=()=>{newLogo=null;lp.innerHTML='<span class="cat">aucun</span>'};
   document.getElementById("saveAcc").onclick=save;document.getElementById("accf").onsubmit=e=>{e.preventDefault();save()};
   const d=document.getElementById("delAcc");if(d)d.onclick=()=>{const n=S.tx.filter(t=>t.accountId===a.id).length;
@@ -1547,7 +1562,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="41";
+const APP_VERSION="42";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
