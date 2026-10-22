@@ -249,7 +249,7 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
 .rk{flex:none;width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-size:13px;font-weight:800;border:1.5px dashed var(--muted);color:var(--muted);cursor:pointer;box-sizing:border-box;margin-left:auto}
 .rk:hover{border-color:var(--accent);color:var(--accent)}.rk.on{border:0;background:#E3F7EE;color:#0B7A52}.rk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .accrow .rk{margin-left:4px}
-.blogo{height:36px;min-width:36px;max-width:150px;padding:4px 8px;border-radius:11px;background:#fff;display:inline-grid;place-items:center;box-sizing:border-box;flex:none;overflow:hidden}.blogo img{max-height:100%;max-width:100%;object-fit:contain;display:block}
+.blogo{height:36px;min-width:36px;max-width:150px;padding:4px;border-radius:11px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex:none;overflow:hidden;align-self:flex-start}.blogo img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block;min-width:0}
 .bankh .blogo{height:32px;max-width:170px}.acard .blogo{height:34px}.blogo.big{height:44px;min-width:60px;max-width:200px;border:1px solid var(--line)}
 .logoup{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
 .bankgrp{border:1px dashed color-mix(in srgb,var(--c) 35%,var(--line));border-radius:18px;padding:12px;margin-bottom:12px;background:color-mix(in srgb,var(--surface) 40%,transparent)}
@@ -1547,7 +1547,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="40";
+const APP_VERSION="41";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
