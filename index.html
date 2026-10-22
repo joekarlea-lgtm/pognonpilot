@@ -249,6 +249,9 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
 .rk{flex:none;width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;font-size:13px;font-weight:800;border:1.5px dashed var(--muted);color:var(--muted);cursor:pointer;box-sizing:border-box;margin-left:auto}
 .rk:hover{border-color:var(--accent);color:var(--accent)}.rk.on{border:0;background:#E3F7EE;color:#0B7A52}.rk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .accrow .rk{margin-left:4px}
+.blogo{height:36px;min-width:36px;max-width:150px;padding:4px 8px;border-radius:11px;background:#fff;display:inline-grid;place-items:center;box-sizing:border-box;flex:none;overflow:hidden}.blogo img{max-height:100%;max-width:100%;object-fit:contain;display:block}
+.bankh .blogo{height:32px;max-width:170px}.acard .blogo{height:34px}.blogo.big{height:44px;min-width:60px;max-width:200px;border:1px solid var(--line)}
+.logoup{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
 .bankgrp{border:1px dashed color-mix(in srgb,var(--c) 35%,var(--line));border-radius:18px;padding:12px;margin-bottom:12px;background:color-mix(in srgb,var(--surface) 40%,transparent)}
 .bankh{display:flex;align-items:center;gap:10px;margin:0 2px 10px;min-width:0}.bankh .ini{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;flex:none}
 .bankh b{font-size:13px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bankh .cat{white-space:nowrap}.bankt{margin-left:auto;font-weight:700;white-space:nowrap}
@@ -455,7 +458,13 @@ const KEY="pognonpilot.v1";
 const TYPES=["Courant","Épargne","Placements","Collection"];
 const TYPE_HINT={"Courant":"Comptes de tous les jours et cartes","Épargne":"Livrets et comptes d'épargne","Placements":"Assurance-vie, PEA, titres","Collection":"Valeur des objets de collection"};
 const OLD_TYPES={"Compte courant":"Courant","Carte de crédit":"Courant","Espèces":"Courant","Prêt":"Courant","Livret / Épargne":"Épargne","Placement":"Placements"};
-function migrate(d){d.tx.forEach(t=>{if(t.note)t.note=normNote(t.note)});(d.recurring||[]).forEach(r=>{if(r.note)r.note=normNote(r.note)});d.accounts.forEach(a=>{if(!TYPES.includes(a.type))a.type=OLD_TYPES[a.type]||"Courant"});d.tx.forEach(t=>{if(t.status!=="R")t.status=""});d.categories.forEach(c=>delete c.kind);ensureIcons(d);if(!Array.isArray(d.recurring))d.recurring=[];return d}
+function migrate(d){if(!d.mig40){d.mig40=1;
+  d.accounts.forEach(a=>{if(["AMAZON","PAYPAL","POULPEO"].includes(String(a.name).trim().toUpperCase())&&a.block==null)a.block="Portefeuilles en ligne"});
+  const rp=v=>typeof v==="string"?v.replace(/PSA Banque/gi,"DISTINGO Bank"):v;
+  d.accounts.forEach(a=>{a.name=rp(a.name);a.bank=rp(a.bank)});(d.payees||[]).forEach(p=>p.name=rp(p.name));
+  if(d.payees){const seen=new Set();d.payees=d.payees.filter(p=>{const k=String(p.name).toLowerCase();if(seen.has(k))return false;seen.add(k);return true})}
+  d.tx.forEach(t=>{t.payee=rp(t.payee);t.note=rp(t.note);if(t.doubt)t.doubt=rp(t.doubt)});(d.recurring||[]).forEach(r=>{r.payee=rp(r.payee);r.label=rp(r.label);r.note=rp(r.note)})}
+  if(!d.logos||typeof d.logos!=="object")d.logos={};d.tx.forEach(t=>{if(t.note)t.note=normNote(t.note)});(d.recurring||[]).forEach(r=>{if(r.note)r.note=normNote(r.note)});d.accounts.forEach(a=>{if(!TYPES.includes(a.type))a.type=OLD_TYPES[a.type]||"Courant"});d.tx.forEach(t=>{if(t.status!=="R")t.status=""});d.categories.forEach(c=>delete c.kind);ensureIcons(d);if(!Array.isArray(d.recurring))d.recurring=[];return d}
 const COLORS=["#0B6E5A","#2F5DA8","#C0632F","#7A4FA0","#A3842A","#3E7F94","#B04A6B","#5B6770"];
 const eur=new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"});
 const fmt=n=>eur.format((Math.round(n*100)/100)||0);
@@ -725,7 +734,7 @@ function renderDash(){
   const upBand=up.length?`${sec("calendar",1,"À venir",'<button class="link" data-view="rec">Échéancier</button>')}<div class="hband">${up.map(r=>{const d=dueInfo(r),a=accById(r.accountId);return`<button class="hcard hup" data-recedit="${r.id}">${recBadge(r)}<span class="ht"><b>${esc(r.label)}</b><small>${esc(a?a.name:"")}</small><span class="due ${d.cls}">${d.txt}</span></span><span class="ham num ${r.amount>0?"pos":""}">${r.amount>0?"+":""}${fmt(r.amount)}</span></button>`}).join("")}</div>`:"";
   // mes comptes
   const ha=homeAccs().map(accById);
-  const accBand=`${sec("bank",3,"Mes comptes",'<button class="link" data-act="homeaccs">Choisir</button>')}${ha.length?`<div class="hband">${ha.map(a=>{const b=balance(a.id);return`<button class="hcard hacc" data-accfiche="${a.id}"><span class="top"><span class="ini" style="background:${a.color}">${esc((a.bank||a.name)[0]||"?")}</span><span class="ty">${svgIco(a.type==="Courant"?"card":a.type==="Épargne"?"piggy":"trend")}${esc(a.type)}</span></span><span class="nm">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></button>`}).join("")}</div>`:'<div class="cat hempty">Aucun compte choisi. Touche « Choisir » pour en ajouter.</div>'}`;
+  const accBand=`${sec("bank",3,"Mes comptes",'<button class="link" data-act="homeaccs">Choisir</button>')}${ha.length?`<div class="hband">${ha.map(a=>{const b=balance(a.id);return`<button class="hcard hacc" data-accfiche="${a.id}"><span class="top">${accIni(a)}<span class="ty">${svgIco(a.type==="Courant"?"card":a.type==="Épargne"?"piggy":"trend")}${esc(a.type)}</span></span><span class="nm">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></button>`}).join("")}</div>`:'<div class="cat hempty">Aucun compte choisi. Touche « Choisir » pour en ajouter.</div>'}`;
   // opérations des 3 derniers jours (glissants)
   const d3=iso(new Date(Date.now()-2*864e5)),td=today();
   const rec3=sorted(S.tx.filter(t=>t.date>=d3&&t.date<=td&&(!t.transferId||t.amount<0)));
@@ -788,7 +797,10 @@ function renderReg0(){
   const qi=document.getElementById("q");qi.addEventListener("input",()=>{regQ=qi.value;const pos=qi.selectionStart;renderReg();const n=document.getElementById("q");n.focus();n.setSelectionRange(pos,pos)});
 }
 
-function accCard(a,inBank){const b=balance(a.id);return`<button class="acard${inBank?" inbank":""}" data-accfiche="${a.id}">${inBank?"":`<span class="top"><span class="ini" style="background:${a.color}">${esc((a.bank||a.name)[0]||"?")}</span><span class="ty">${esc(a.bank||a.type)}</span></span>`}<span><span class="nm" style="display:block">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></span><span class="afoot"><span class="rkwhen">${a.rkDate?`<span class="rkl">Rapproché le </span>${fdate(a.rkDate)}`:""}</span>${rkChip(a)}</span></button>`}
+const bankKey=a=>String(a.bank||"").trim().toLowerCase();
+const logoOf=a=>(S.logos||{})[bankKey(a)]||"";
+const accIni=(a,st="")=>{const l=logoOf(a);return l?`<span class="blogo" style="${st}" title="${esc(a.bank||"")}"><img src="${l}" alt="${esc(a.bank||"")}"></span>`:`<span class="ini" style="background:${a.color};${st}">${esc((a.bank||a.name)[0]||"?")}</span>`};
+function accCard(a,inBank){const b=balance(a.id);return`<button class="acard${inBank?" inbank":""}" data-accfiche="${a.id}">${inBank==="multi"?`<span class="top">${accIni(a)}</span>`:inBank?"":`<span class="top">${accIni(a)}${logoOf(a)?"":`<span class="ty">${esc(a.bank||a.type)}</span>`}</span>`}<span><span class="nm" style="display:block">${esc(a.name)}</span><span class="bal num ${b<0?"neg":""}">${fmt(b)}</span></span><span class="afoot"><span class="rkwhen">${a.rkDate?`<span class="rkl">Rapproché le </span>${fdate(a.rkDate)}`:""}</span>${rkChip(a)}</span></button>`}
 const rkChip=a=>`<span class="rk ${a.rkDate?"on":""}" role="button" tabindex="0" data-acrk="${a.id}" title="${a.rkDate?"Compte rapproché le "+fdate(a.rkDate)+" · clic pour retirer":"Non rapproché · clic pour valider"}" aria-label="${a.rkDate?"Compte rapproché":"Compte non rapproché"}">${a.rkDate?"R":"–"}</span>`;
 
 let swipeBlock=0;
@@ -809,16 +821,17 @@ function renderAcc(){
   main.innerHTML=`${banner()}<div class="head"><div><div class="eyebrow">${acts.length} compte${acts.length>1?"s":""} actif${acts.length>1?"s":""} · ${fmt(total)}</div><h1>Comptes</h1></div><button class="btn primary" data-act="newacc" style="display:inline-flex">+ Nouveau compte</button></div>
   ${TYPES.map(ty=>{const l=acts.filter(a=>a.type===ty).sort((x,y)=>Math.abs(balance(y.id))-Math.abs(balance(x.id)));
     return`<section class="accgrp g${TYPES.indexOf(ty)%4}"><div class="sechead"><h2 style="margin:0">${ty}</h2><span class="cat">${TYPE_HINT[ty]}</span><span class="num sectot">${fmt(l.reduce((s,a)=>s+balance(a.id),0))}</span></div>
-    ${(()=>{if(ty==="Collection")return`<div class="accgrid wrapgrid">${l.map(a=>accCard(a)).join("")}`;const G={};l.forEach(a=>{const k=(a.bank||"").trim()||"Autres";(G[k]=G[k]||[]).push(a)});
+    ${(()=>{if(ty==="Collection")return`<div class="accgrid wrapgrid">${l.map(a=>accCard(a)).join("")}`;const G={};l.forEach(a=>{const k=(a.block||"").trim()||(a.bank||"").trim()||"Autres";(G[k]=G[k]||[]).push(a)});
       const gl=Object.entries(G).map(([k,v])=>({k,v,t:v.reduce((s,a)=>s+balance(a.id),0)})).sort((x,y)=>(x.k==="Autres")-(y.k==="Autres")||Math.abs(y.t)-Math.abs(x.t));
-      return gl.map(g=>`<div class="bankgrp"><div class="bankh"><span class="ini" style="background:${g.v[0].color}">${esc(g.k[0]||"?")}</span><b>${esc(g.k)}</b><span class="cat">· ${g.v.length} compte${g.v.length>1?"s":""}</span><span class="num bankt ${g.t<0?"neg":""}">${fmt(g.t)}</span></div><div class="accgrid wrapgrid">${g.v.map(a=>accCard(a,true)).join("")}</div></div>`).join("")+`<div class="accgrid wrapgrid" style="margin-top:12px">`})()}<button class="acard addcard" data-newtype="${ty}"><span class="ini" style="background:var(--surface-2);color:var(--muted)">+</span><span class="nm">Ajouter un compte ${ty.toLowerCase()}</span></button></div></section>`}).join("")}
+      return gl.map(g=>{const multi=new Set(g.v.map(bankKey)).size>1||(g.v[0].block||"").trim()===g.k,one=!multi&&logoOf(g.v[0]);
+        return`<div class="bankgrp"><div class="bankh">${multi?`<span class="ini" style="background:var(--muted)">${esc(g.k[0]||"?")}</span><b>${esc(g.k)}</b>`:one?`${accIni(g.v[0])}`:`${accIni(g.v[0])}<b>${esc(g.k)}</b>`}<span class="cat">· ${g.v.length} compte${g.v.length>1?"s":""}</span><span class="num bankt ${g.t<0?"neg":""}">${fmt(g.t)}</span></div><div class="accgrid wrapgrid">${g.v.map(a=>accCard(a,multi?"multi":true)).join("")}</div></div>`}).join("")+`<div class="accgrid wrapgrid" style="margin-top:12px">`})()}<button class="acard addcard" data-newtype="${ty}"><span class="ini" style="background:var(--surface-2);color:var(--muted)">+</span><span class="nm">Ajouter un compte ${ty.toLowerCase()}</span></button></div></section>`}).join("")}
   ${closed.length?`<details class="panel"><summary><b>Comptes clôturés</b> <span class="cat">· ${closed.length}</span></summary><div class="acclist" style="margin-top:10px">${closed.map(a=>`<button class="accrow" data-accfiche="${a.id}"><span class="dot" style="background:${a.color};opacity:.6">${esc(a.name[0]||"?")}</span><span style="min-width:0"><div class="an">${esc(a.name)}</div><div class="at">${esc(a.bank||a.type)} · ${S.tx.filter(t=>t.accountId===a.id).length} opérations</div></span><span class="amt num">${fmt(balance(a.id))}</span>${rkChip(a)}</button>`).join("")}</div></details>`:""}`;
 }
 function accFiche(id){const a=accById(id);if(!a)return;const b=balance(a.id),ym=today().slice(0,7);
   const mt=S.tx.filter(t=>t.accountId===id&&t.date.startsWith(ym));const inn=mt.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0),out=Math.abs(mt.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0));
   const pts=[];const n=new Date();for(let i=12;i>=0;i--){const d=new Date(n.getFullYear(),n.getMonth()-i+1,0);pts.push(balanceAt(id,i?iso(d):today()))}
   const last=sorted(S.tx.filter(t=>t.accountId===id)).slice(0,5);
-  openSheet(`<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px"><span class="ini" style="width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;color:#fff;background:${a.color};flex:none">${esc((a.bank||a.name)[0]||"?")}</span>
+  openSheet(`<div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">${accIni(a,"width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;color:#fff;flex:none")}
    <div style="min-width:0"><h2 style="margin:0">${esc(a.name)}${a.closed?'<span class="xfer">CLÔTURÉ</span>':""}</h2><div class="cat">${esc([a.bank,a.type,a.opened?"ouvert le "+fdate(a.opened):""].filter(Boolean).join(" · "))}</div></div></div>
    <div class="fichebal"><div>${kh("wallet",0,"Solde")}<b class="num ${b<0?"neg":""}">${fmt(b)}</b></div><div>${kh("check",0,"Rapproché")}<b class="num">${fmt(balance(id,true))}</b></div></div>
    <div class="eyebrow" style="margin:14px 0 4px">Solde sur 12 mois</div>${curve(pts,480,110,"var(--accent)")}
@@ -1308,6 +1321,8 @@ function accSheet(id,presetType){
   openSheet(`<h2>${a?"Modifier le compte":"Nouveau compte"}</h2><form id="accf" class="form">
    <div class="field full"><label for="a-name">Nom</label><input class="inp" id="a-name" required value="${esc(a?.name||"")}" placeholder="Ex. Compte joint"></div>
    <div class="field"><label for="a-bank">Établissement</label><input class="inp" id="a-bank" value="${esc(a?.bank||"")}" placeholder="Ex. BoursoBank"></div>
+   <div class="field"><label for="a-block">Bloc dans Comptes <span class="cat">(facultatif)</span></label><input class="inp" id="a-block" value="${esc(a?.block||"")}" placeholder="Vide = regroupé par établissement" list="a-blocks"><datalist id="a-blocks">${[...new Set(S.accounts.map(x=>(x.block||"").trim()).filter(Boolean))].map(b=>`<option value="${esc(b)}">`).join("")}</datalist></div>
+   <div class="field full"><label>Logo de l'établissement</label><div class="logoup"><span id="a-logoprev" class="blogo big">${a&&logoOf(a)?`<img src="${logoOf(a)}" alt="">`:`<span class="cat">aucun</span>`}</span><label class="btn small" for="a-logo">Choisir une image…</label><input type="file" id="a-logo" accept="image/*" hidden><button type="button" class="btn small" id="a-logodel">Retirer</button></div><span class="cat">Le logo vaut pour tous les comptes du même établissement.</span></div>
    <div class="field"><label for="a-state">État</label><select class="inp" id="a-state"><option value="">Actif</option><option value="1" ${a?.closed?"selected":""}>Clôturé</option></select></div>
    <div class="field"><label for="a-type">Type</label><select class="inp" id="a-type">${TYPES.map(t=>`<option ${(a?a.type:presetType)===t?"selected":""}>${t}</option>`).join("")}</select></div>
    <div class="field"><label for="a-open">Date d'ouverture</label><input class="inp" type="date" id="a-open" value="${a?(a.opened||""):today()}"></div>
@@ -1316,8 +1331,12 @@ function accSheet(id,presetType){
    <div class="actions">${a?'<button class="btn danger" id="delAcc">Supprimer</button>':""}<div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveAcc">Enregistrer</button></div></div>`);
   modal.querySelectorAll("[data-sw]").forEach(b=>b.onclick=()=>{color=b.dataset.sw;modal.querySelectorAll("[data-sw]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
   const save=()=>{const name=document.getElementById("a-name").value.trim();if(!name){toast("Donne un nom au compte.");return}
-    const o={name,bank:document.getElementById("a-bank").value.trim(),closed:!!document.getElementById("a-state").value,type:document.getElementById("a-type").value,opened:document.getElementById("a-open").value||null,initial:parseAmount(document.getElementById("a-init").value)||0,color};
+    const bk=document.getElementById("a-bank").value.trim().toLowerCase();S.logos=S.logos||{};if(newLogo===null){if(bk)delete S.logos[bk]}else if(newLogo){if(bk)S.logos[bk]=newLogo;else{toast("Indique l'établissement pour enregistrer son logo.");return}}
+    const o={name,block:document.getElementById("a-block").value.trim(),bank:document.getElementById("a-bank").value.trim(),closed:!!document.getElementById("a-state").value,type:document.getElementById("a-type").value,opened:document.getElementById("a-open").value||null,initial:parseAmount(document.getElementById("a-init").value)||0,color};
     if(a)Object.assign(a,o);else S.accounts.push({id:uid(),...o});closeSheet();commit();toast(a?"Compte modifié":"Compte créé")};
+  let newLogo;const lp=document.getElementById("a-logoprev");
+  document.getElementById("a-logo").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const H=96,sc=Math.min(1,H/im.height,320/im.width),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));c.getContext("2d").drawImage(im,0,0,c.width,c.height);newLogo=c.toDataURL("image/png");lp.innerHTML=`<img src="${newLogo}" alt="">`};im.onerror=()=>toast("Image illisible.");im.src=rd.result};rd.readAsDataURL(f)};
+  document.getElementById("a-logodel").onclick=()=>{newLogo=null;lp.innerHTML='<span class="cat">aucun</span>'};
   document.getElementById("saveAcc").onclick=save;document.getElementById("accf").onsubmit=e=>{e.preventDefault();save()};
   const d=document.getElementById("delAcc");if(d)d.onclick=()=>{const n=S.tx.filter(t=>t.accountId===a.id).length;
     confirmSheet(`Supprimer « ${a.name} » ?`,n?`Ses ${n} opérations seront supprimées, ainsi que l'autre côté des virements concernés.`:"Ce compte n'a aucune opération.","Supprimer",()=>{
@@ -1528,7 +1547,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="39";
+const APP_VERSION="40";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
