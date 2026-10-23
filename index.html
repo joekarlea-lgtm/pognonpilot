@@ -532,8 +532,13 @@ function upgrade(d){if(d.init==="pp30"){const names=new Set(d.accounts.map(a=>a.
 function blank(){const s=sample();return{version:1,sample:false,accounts:[{id:uid(),name:"Compte courant",type:"Courant",initial:0,color:COLORS[0]}],categories:s.categories,tx:[]}}
 
 /* ---------- stockage ---------- */
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S=migrate(o.data);if(S.sample||!/^pp3/.test(S.init||""))S=fresh();else S=upgrade(S);dirty=!!o.dirty;lastSaved=o.lastSaved||null;return}}catch(e){}S=fresh();cache()}
-function cache(){try{localStorage.setItem(KEY,JSON.stringify({data:S,dirty,lastSaved}))}catch(e){}}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S=migrate(o.data);if(S.sample||!/^pp3/.test(S.init||""))S=fresh();else S=upgrade(S);dirty=!!o.dirty;lastSaved=o.lastSaved||null;cacheStamp=o.stamp||1;return}}catch(e){}S=fresh();cacheStamp=0}
+let cacheStamp=0,idbTimer=null;
+function cache(){cacheStamp=Date.now();const o={data:S,dirty,lastSaved,stamp:cacheStamp};
+  try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){try{localStorage.removeItem(KEY)}catch(_){}}
+  clearTimeout(idbTimer);idbTimer=setTimeout(()=>{try{idb.set("cache",JSON.parse(JSON.stringify({data:S,dirty,lastSaved,stamp:cacheStamp})))}catch(e){}},250)}
+async function loadIdb(){try{const o=await idb.get("cache");if(!o||!o.data||!(o.stamp>cacheStamp))return;
+  const d=upgrade(migrate(o.data));if(d.sample||!/^pp3/.test(d.init||""))return;S=d;dirty=!!o.dirty;lastSaved=o.lastSaved||null;cacheStamp=o.stamp;render()}catch(e){}}
 function commit(){dirty=true;cache();render();scheduleAutoSave()}
 
 /* ---------- calculs ---------- */
@@ -1572,7 +1577,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||""}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="44";
+const APP_VERSION="45";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
@@ -1617,7 +1622,7 @@ async function openJson(file,handle){
   try{o=JSON.parse(txt)}catch(e){return ko(`« ${file.name} » est incomplet ou abîmé (${Math.round(txt.length/1024)} Ko lus). Vérifie dans OneDrive qu'il n'existe pas une autre copie plus récente, par exemple « ${file.name.replace(/\.json$/i,"")} (1).json ».`)}
   if(o&&o.data&&o.data.accounts&&!o.accounts)o=o.data;
   if(!o||!Array.isArray(o.accounts)||!Array.isArray(o.tx)||!Array.isArray(o.categories))return ko(`« ${file.name} » n'est pas un fichier de données PognonPILOT (il ne contient pas de comptes et d'opérations).`);
-  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},...(Array.isArray(o.homeAccs)?{homeAccs:o.homeAccs}:{}),tx:o.tx}));
+  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},...(Array.isArray(o.homeAccs)?{homeAccs:o.homeAccs}:{}),...(o.logos&&typeof o.logos==="object"?{logos:o.logos}:{}),...(o.mig40?{mig40:o.mig40}:{}),tx:o.tx}));
     if(handle)await linkHandle(handle);dirty=false;lastSaved=Math.max(Date.now(),file.lastModified||0);cache();view="dash";render();
     toast(`${handle?"Fichier lié":"Fichier ouvert"} : ${S.accounts.length} comptes, ${S.tx.length} opérations`)};
   if(dirty&&S.accounts.length)confirmSheet("Remplacer les données actuelles ?","Tes dernières modifications n'ont pas été enregistrées. Elles seront perdues si tu ouvres ce fichier.","Ouvrir quand même",go);else await go();
@@ -1638,7 +1643,12 @@ const fileBanner=()=>fileState==="reconnect"?`<div class="banner"><span><b>Ton f
   :fileState==="newer"?`<div class="banner"><span><b>Ton fichier ${esc(fileHandle?.name||"")} est plus récent</b> que les données affichées, et tu as des modifications non enregistrées ici.</span><span class="row"><button class="btn small primary" data-act="loadnewer">Charger le fichier</button><button class="btn small" data-act="keepmine">Garder mes données</button></span></div>`:"";
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;render()});
 window.addEventListener("appinstalled",()=>{deferredInstall=null;render();toast("PognonPILOT est installée")});
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&fileHandle&&fileState==="linked")checkLinked(false)});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&fileHandle&&fileState==="linked")checkLinked(false);if(document.visibilityState==="hidden")flushSave()});
+async function flushSave(){if(!dirty||!fileHandle||fileState!=="linked"||!autoSave)return;clearTimeout(saveTimer);try{if(await perm(fileHandle,false)){await writeHandle();markSaved()}}catch(e){}}
+window.addEventListener("pagehide",()=>{flushSave()});
+window.addEventListener("beforeunload",e=>{if(!dirty||!S.accounts.length)return;flushSave();e.preventDefault();e.returnValue=""});
+/* reconnexion du fichier au premier clic (le navigateur exige un geste pour redonner l'accès) */
+let autoReco=false;document.addEventListener("pointerdown",()=>{if(autoReco||fileState!=="reconnect"||!fileHandle)return;autoReco=true;checkLinked(true)},true);
 if("serviceWorker" in navigator&&!window.claude&&window.isSecureContext)navigator.serviceWorker.register("sw.js").then(r=>{document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")r.update().catch(()=>{})})}).catch(()=>{});
 if("serviceWorker" in navigator&&!window.claude){let reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloaded||dirty)return;reloaded=true;location.reload()})}
 
@@ -1736,7 +1746,7 @@ document.getElementById("fab").onclick=()=>txSheet();
 document.getElementById("fileJson").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)openJson(f)};
 document.getElementById("fileImport").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)handleImport(f)};
 
-load();render();initFile();
+load();render();loadIdb().then(()=>initFile());
 </script>
 
 </body>
