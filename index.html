@@ -252,9 +252,9 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
 .catl{margin-top:2px;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:0;font-size:14px;line-height:1.35}
 .catl .c1{font-weight:800;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.catl .c2{font-weight:700;color:var(--fg)}.catl .cmut{color:var(--muted);font-weight:600}.catl .csep{color:var(--muted);font-size:12px}
 .payee .vtag{margin-left:8px;vertical-align:1px}
-.rparts{margin-top:6px;display:grid;gap:8px}.rpart{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;align-items:baseline;padding-left:10px;border-left:2px solid var(--line)}
-.rpart .catl{margin:0}.rpart .pa{font-weight:700;font-size:15px;white-space:nowrap;color:var(--fg)}.rpart .pa.neg{color:var(--neg)}.rpart .pa.pos{color:var(--pos)}
-.rpart .pnote{grid-column:1/-1;font-size:13.5px;color:var(--muted);font-weight:400;line-height:1.4;overflow-wrap:anywhere}
+.rparts{margin-top:6px;display:grid;gap:8px}.rpart{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:2px;padding-left:10px;border-left:2px solid var(--line);min-width:0}
+.rpart .catl{margin:0;flex:1 1 160px;min-width:0}.rpart .catl span{overflow-wrap:anywhere}.rpart .pa{font-weight:700;font-size:15px;white-space:nowrap;color:var(--fg);margin-left:auto;flex:none}.rpart .pa.neg{color:var(--neg)}.rpart .pa.pos{color:var(--pos)}
+.rpart .pnote{flex:1 1 100%;font-size:13.5px;color:var(--muted);font-weight:400;line-height:1.4;overflow-wrap:anywhere}
 .blogo{height:44px;min-width:44px;max-width:170px;padding:0;background:transparent;display:inline-flex;align-items:center;justify-content:flex-start;box-sizing:border-box;flex:none;align-self:flex-start}.blogo img{height:100%;width:auto;max-width:100%;object-fit:contain;display:block;min-width:0}
 .blogo .lgd{display:none}:root[data-theme="dark"] .blogo .lgl{display:none}:root[data-theme="dark"] .blogo .lgd{display:block}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .blogo .lgl{display:none}:root:not([data-theme="light"]) .blogo .lgd{display:block}}
@@ -1586,7 +1586,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="48";
+const APP_VERSION="49";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
