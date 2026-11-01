@@ -1301,15 +1301,19 @@ function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());c
 function catOptions(kind,sel){return S.categories.map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
 function accOptions(sel,all){return S.accounts.filter(a=>all||!a.closed||a.id===sel).map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)}${a.closed?" (clôturé)":""}</option>`).join("")}
 
+function dupTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;const base={dup:true,dupOf:t.date,date:today(),mode:t.mode||"",note:t.note||""};
+  if(t.transferId){const pair=S.tx.find(x=>x.transferId===t.transferId&&x.id!==t.id),out=t.amount<0?t:pair,inn=t.amount<0?pair:t;txSheet(null,"vir",{...base,amount:Math.abs(t.amount),dupFrom:out?.accountId||t.accountId,dupTo:inn?.accountId||""});return}
+  txSheet(null,t.amount<0?"dep":"rev",{...base,accountId:t.accountId,payee:t.payee,amount:t.amount,catId:t.catId||null,subId:t.subId||null,splits:isSplit(t)?t.splits.map(p=>({...p})):null})}
 function txSheet(id,presetMode,pre){
   const t=id?S.tx.find(x=>x.id===id):null;const tv=t||pre||null;let splitInit=splitInitOf(tv),spEd=null;recPending=pre&&pre.recId||null;
   let pair=t&&t.transferId?S.tx.find(x=>x.transferId===t.transferId&&x.id!==t.id):null;
   let from=t,to=pair;if(t&&t.transferId&&t.amount>0){from=pair;to=t}
+  if(!t&&pre&&pre.dup&&pre.dupFrom){from={accountId:pre.dupFrom,date:pre.date,status:"",note:pre.note||"",mode:pre.mode};to={accountId:pre.dupTo}}
   let mode=t?(t.transferId?"vir":t.amount>=0?"rev":"dep"):(presetMode||"dep");
   const defAcc=regAcc!=="all"?regAcc:defaultAcc();
   const draw=()=>{
     const isV=mode==="vir",base=isV?from:tv;
-    openSheet(`<h2>${t?"Modifier l'opération":pre?"Saisir l'échéance":"Nouvelle opération"}</h2>
+    openSheet(`<h2>${t?"Modifier l'opération":pre&&!pre.dup?"Saisir l'échéance":"Nouvelle opération"}</h2>${pre&&pre.dup?`<div class="banner" style="margin-bottom:12px">Copie de l'opération du ${fdate(pre.dupOf)} — vérifie le montant et la date.</div>`:""}
     ${t&&(t.doubt||pair?.doubt)?`<div class="banner vbanner" id="vban">${pillIco("alert")}<div><b>À vérifier</b>${esc(t.doubt||pair.doubt)}<br><button type="button" class="btn" id="okDoubt">✓ Marquer comme vérifiée</button></div></div>`:""}
     <div class="seg" role="group"><button type="button" data-mode="dep" aria-pressed="${mode==="dep"}">${pillIco("down")}Dépense</button><button type="button" data-mode="rev" aria-pressed="${mode==="rev"}">${pillIco("up")}Revenu</button><button type="button" data-mode="vir" aria-pressed="${isV}">${pillIco("transfer")}Virement</button></div>
     <form id="txf" class="form">
@@ -1323,7 +1327,7 @@ function txSheet(id,presetMode,pre){
      <div class="field"><label for="f-st">Statut</label><select class="inp" id="f-st"><option value="">Non rapprochée</option><option value="R" ${(base?.status)==="R"?"selected":""}>Rapprochée (R)</option></select></div>
      <div class="field full"><label for="f-note">Note</label><textarea class="inp tnoteinp" id="f-note" rows="${Math.max(1,(base?.note||"").split("\n").length)}" placeholder="Facultatif (une ligne par note)">${esc(base?.note||"")}</textarea></div>
     </form>
-    <div class="actions"><div class="row">${t?'<button class="btn danger" id="delTx">Supprimer</button>':""}${t&&!t.transferId?'<button class="btn" id="mkRec">'+pillIco("calendar")+'Rendre récurrente</button>':""}</div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
+    <div class="actions"><div class="row">${t?'<button class="btn danger" id="delTx">Supprimer</button><button class="btn" id="dupTx">⧉ Dupliquer</button>':""}${t&&!t.transferId?'<button class="btn" id="mkRec">'+pillIco("calendar")+'Rendre récurrente</button>':""}</div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="saveTx">Enregistrer</button></div></div>`);
     modal.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{if(spEd&&!document.getElementById("splitField").hidden)splitInit=spEd.get();mode=b.dataset.mode;draw()});
     const sF=document.getElementById("splitField"),cF=document.getElementById("catField"),totF=()=>parseAmount(document.getElementById("f-amt").value);spEd=null;
     const sgnF=()=>mode==="rev"?1:-1;
@@ -1362,6 +1366,8 @@ function txSheet(id,presetMode,pre){
     document.getElementById("saveTx").onclick=save;
     document.getElementById("txf").onsubmit=e=>{e.preventDefault();save()};
     const mk=document.getElementById("mkRec");if(mk)mk.onclick=()=>recSheet(null,{label:t.payee,payee:t.payee,amount:t.amount,accountId:t.accountId,catId:t.catId,subId:t.subId,freq:"M",next:addFreq(t.date,"M"),note:t.note,mode:t.mode||"",splits:isSplit(t)?t.splits.map(x=>({...x})):null});
+    const dp=document.getElementById("dupTx");if(dp)dp.onclick=()=>{closeSheet();dupTx(t.id)};
+    if(pre&&pre.dup){const fa=document.getElementById("f-amt");if(fa){fa.focus();fa.select()}}
     const del=document.getElementById("delTx");if(del)del.onclick=()=>confirmSheet("Supprimer l'opération ?",t.transferId?"Les deux côtés du virement seront supprimés.":"Cette opération sera retirée du registre.","Supprimer",()=>{S.tx=S.tx.filter(x=>x.id!==t.id&&!(t.transferId&&x.transferId===t.transferId));commit();toast("Opération supprimée")});
   };
   if(!S.accounts.length){toast("Crée d'abord un compte.");return}
@@ -1599,7 +1605,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="52";
+const APP_VERSION="53";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
