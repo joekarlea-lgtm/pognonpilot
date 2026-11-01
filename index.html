@@ -1298,7 +1298,8 @@ function regAllR(){const ids=new Set(regIds);const sel=S.tx.filter(t=>ids.has(t.
     toastUndo(`${n} opération${n>1?"s":""} ${toR?"rapprochée"+(n>1?"s":""):": R retiré"}`,()=>{S.tx.forEach(t=>{if(prev.has(t.id))t.status=prev.get(t.id)});commit();toast("Modification annulée")})})}
 function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 
-function catOptions(kind,sel){return S.categories.map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
+const byName=(a,b)=>String(a.name).localeCompare(String(b.name),"fr",{sensitivity:"base",numeric:true});
+function catOptions(kind,sel){return S.categories.slice().sort(byName).map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.slice().sort(byName).map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
 function accOptions(sel,all){return S.accounts.filter(a=>all||!a.closed||a.id===sel).map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)}${a.closed?" (clôturé)":""}</option>`).join("")}
 
 function dupTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;const base={dup:true,dupOf:t.date,date:today(),mode:t.mode||"",note:t.note||""};
@@ -1605,7 +1606,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="53";
+const APP_VERSION="54";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
