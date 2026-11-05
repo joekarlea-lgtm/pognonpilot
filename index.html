@@ -441,11 +441,26 @@ table.reg tr.averif td:first-child{box-shadow:inset 4px 0 0 #7C4DEB}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) table.reg tr.averif td{background:color-mix(in srgb,#A27BFF 12%,var(--surface))}:root:not([data-theme="light"]) .whyv,:root:not([data-theme="light"]) .fpill.fver{color:#C4A8FF}:root:not([data-theme="light"]) .fpill.fver[aria-pressed="true"],:root:not([data-theme="light"]) .vbanner{background:#2A2045;color:#E2D6FF}:root:not([data-theme="light"]) .vbanner b,:root:not([data-theme="light"]) .vbanner .pi{color:#C4A8FF}}
 mark{background:color-mix(in srgb,#F4CD62 45%,transparent);color:inherit;border-radius:3px;padding:0 1px}
 .ord{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.ord b{color:var(--fg);font-weight:600}
+.fpill.fdup{border-color:#B45309;color:#B45309}.fpill.fdup[aria-pressed="true"]{background:#FFF1DC;color:#9A4508;border-color:#B45309}
+:root[data-theme="dark"] .fpill.fdup{border-color:#F5B35C;color:#F5B35C}:root[data-theme="dark"] .fpill.fdup[aria-pressed="true"]{background:#3A2A12}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fpill.fdup{border-color:#F5B35C;color:#F5B35C}:root:not([data-theme="light"]) .fpill.fdup[aria-pressed="true"]{background:#3A2A12}}
+.duplist{display:grid;gap:12px}.dpair{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.dpair .dph{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:color-mix(in srgb,#F59E0B 16%,var(--surface));color:var(--fg);font-weight:700;font-size:13px;padding:8px 12px}.dpair .dph .num{font-weight:600;color:var(--muted)}
+.dop{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}.dop:hover{background:var(--surface-2)}
+.dop .dacc{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}.dop .dpy{font-weight:700}.dop .dnt{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.dop .damt{font-weight:700;text-align:right;white-space:nowrap}.dop .dact{grid-column:1/-1;display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.dpf{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+.ord .lk{color:var(--accent);font-weight:700;cursor:pointer}.ord .lk:hover{text-decoration:underline}
+.lops{border:1px solid var(--line);border-radius:14px;overflow:hidden}.lops .lh{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);font-size:12.5px;font-weight:700;padding:8px 12px}
+.lops .lr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid var(--line);font-size:13.5px;cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-bottom:0;color:inherit;font:inherit;text-align:left}.lops .lr:hover{background:var(--surface-2)}
+.lops .lr .d{color:var(--muted);white-space:nowrap}.lops .ls{display:flex;justify-content:space-between;padding:9px 12px;border-top:1px solid var(--line);font-weight:700;font-size:13.5px;background:var(--surface-2)}
+.sub .x.mg{font-size:13px}
+.snaps table{width:100%;border-collapse:collapse;font-size:13.5px}.snaps td{border-top:1px solid var(--line);padding:8px 6px;vertical-align:middle}.snaps td.r{text-align:right}.snaps .tag{display:inline-flex;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--muted);white-space:nowrap}
 .findic{display:inline-flex;flex-wrap:nowrap;gap:8px;max-width:100%}.findic:empty{display:none}
 .fpill.frap{border-color:#11697C;color:#11697C}.fpill.frap[aria-pressed="true"]{background:#E2F4F8;color:#11697C;border-color:#11697C}
 :root[data-theme="dark"] .fpill.frap{border-color:#7DD8EA;color:#7DD8EA}:root[data-theme="dark"] .fpill.frap[aria-pressed="true"]{background:#12313A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fpill.frap{border-color:#7DD8EA;color:#7DD8EA}:root:not([data-theme="light"]) .fpill.frap[aria-pressed="true"]{background:#12313A}}
-.findic .fpill{white-space:nowrap;flex:none}@media (max-width:820px){.findic{gap:5px;overflow-x:auto;scrollbar-width:none}.findic .fpill{padding:6px 8px;font-size:12px;gap:3px}.findic .fpill .pi{width:12px;height:12px}.findic .lbx{display:none}.findic .flbl{display:inline-block}.findic .flbl::first-letter{text-transform:uppercase}}
+.findic .fpill{white-space:nowrap;flex:none}@media (max-width:820px){.findic{gap:5px;flex-wrap:wrap;scrollbar-width:none}.findic .fpill{padding:6px 8px;font-size:12px;gap:3px}.findic .fpill .pi{width:12px;height:12px}.findic .lbx{display:none}.findic .flbl{display:inline-block}.findic .flbl::first-letter{text-transform:uppercase}}
 .fpill.finc{border-color:#E0A100;color:#7A5400}.fpill.finc[aria-pressed="true"]{background:#FFF1C7;color:#7A5400;border-color:#E0A100}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .incbadge{background:#4A3A10;color:#FFD877}:root:not([data-theme="light"]) table.reg tr.incomplete td{background:color-mix(in srgb,#F5B400 10%,var(--surface))}}
 </style>
@@ -552,6 +567,16 @@ let cacheStamp=0,idbTimer=null;
 function cache(){cacheStamp=Date.now();const o={data:S,dirty,lastSaved,stamp:cacheStamp};
   try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){try{localStorage.removeItem(KEY)}catch(_){}}
   clearTimeout(idbTimer);idbTimer=setTimeout(()=>{try{idb.set("cache",JSON.parse(JSON.stringify({data:S,dirty,lastSaved,stamp:cacheStamp})))}catch(e){}},250)}
+/* sauvegardes automatiques : instantanés dans IndexedDB (20 max), pris avant chaque opération à risque et une fois par jour */
+const SNAP_MAX=20;let snapIdx=null;
+async function snapList(){if(!snapIdx)snapIdx=(await idb.get("snapidx"))||[];return snapIdx}
+let snapQ=Promise.resolve();
+function snap(reason){if(!S||S.sample||!S.tx.length)return Promise.resolve();const at=Date.now(),txt=dataJson(),n=S.tx.length;
+  return snapQ=snapQ.then(async()=>{try{await idb.set("snap:"+at,txt);const l=(await snapList()).slice();l.unshift({at,reason,n});for(const x of l.slice(SNAP_MAX))await idb.del("snap:"+x.at);snapIdx=l.slice(0,SNAP_MAX);await idb.set("snapidx",snapIdx);if(view==="file")render()}catch(e){}})}
+async function dailySnap(){const l=await snapList();const d=today();if(!l.some(x=>iso(new Date(x.at))===d&&x.reason==="Du jour"))snap("Du jour")}
+async function restoreSnap(at){const txt=await idb.get("snap:"+at);if(!txt){toast("Cette sauvegarde est introuvable.");return}let o;try{o=JSON.parse(txt)}catch(e){toast("Cette sauvegarde est abîmée.");return}
+  const m=(snapIdx||[]).find(x=>x.at===at);confirmSheet("Restaurer cette sauvegarde ?",`Les données reviendront à leur état du ${new Date(at).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})} (${(m?m.n:o.tx.length).toLocaleString("fr-FR")} opérations). L'état actuel est d'abord sauvegardé : tu pourras y revenir.`,"Restaurer",async()=>{
+    await snap("Avant restauration");S=buildS(o);commit();toast("Sauvegarde restaurée")})}
 async function loadIdb(){try{const o=await idb.get("cache");if(!o||!o.data||!(o.stamp>cacheStamp))return;
   const d=upgrade(migrate(o.data));if(d.sample||!/^pp3/.test(d.init||""))return;S=d;dirty=!!o.dirty;lastSaved=o.lastSaved||null;cacheStamp=o.stamp;render()}catch(e){}}
 function commit(){dirty=true;cache();render();scheduleAutoSave()}
@@ -651,7 +676,7 @@ const ICONS={
  download:'<path d="M12 4v12M7 11l5 5 5-5M4 16v4h16v-4"/>',
  card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
  repeat:'<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
- split:'<path d="M12 3v6M12 9l-6 6v6M12 9l6 6v6"/><circle cx="12" cy="9" r="1.5"/>',
+ dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',split:'<path d="M12 3v6M12 9l-6 6v6M12 9l6 6v6"/><circle cx="12" cy="9" r="1.5"/>',
  chip:'<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>'};
 const ICON_KEYS=Object.keys(ICONS).filter(k=>!["split","card","repeat","list","calendar","up","down","pending","check","scale","wallet","pie","trend","bars","upload","download"].includes(k));
 /* icônes des sous-catégories et des tiers, devinées d'après leur nom */
@@ -793,9 +818,28 @@ function barChart(m){
 }
 function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r||1)));const n=r/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p}
 
+/* doublons possibles : même montant exact, même sens, hors virements ; deux comptes différents à 5 jours max, ou même compte, même jour, même tiers */
+const pairKey=(a,b)=>a<b?a+"|"+b:b+"|"+a;
+function dupPairs(accF){const nd=new Set(S.notDup||[]),g=new Map();S.tx.forEach(t=>{if(t.transferId||!t.amount)return;const k=Math.round(t.amount*100);if(!g.has(k))g.set(k,[]);g.get(k).push(t)});
+  const out=[],dn=x=>Date.parse(x+"T12:00")/864e5;
+  g.forEach(l=>{if(l.length<2)return;l.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    for(let i=0;i<l.length;i++){const a=l[i],da=dn(a.date);for(let j=i+1;j<l.length;j++){const b=l[j],gap=Math.round(dn(b.date)-da);if(gap>5)break;
+      const same=a.accountId===b.accountId;if(same&&!(gap===0&&String(a.payee).toLowerCase()===String(b.payee).toLowerCase()))continue;
+      if(accF&&accF!=="all"&&a.accountId!==accF&&b.accountId!==accF)continue;const k=pairKey(a.id,b.id);if(nd.has(k))continue;out.push({a,b,gap,same,k})}}});
+  return out.sort((x,y)=>x.a.date<y.a.date?1:-1)}
+function dupHtml(pairs){if(!pairs.length)return`<div class="empty">Aucun doublon possible${regAcc!=="all"?" sur ce compte":""}.</div>`;
+  const op=t=>`<div class="dop" data-tx="${t.id}"><div><div class="dacc">${esc(accById(t.accountId)?.name||"")} · ${fdate(t.date)}${t.status==="R"?" · R":""}</div><div class="dpy">${esc(t.payee)}</div><div class="dnt">${isSplit(t)?`Ventilée · ${t.splits.length} parts`:esc(catLabel(t))}${t.note?" — "+esc(t.note.split("\n")[0]):""}</div></div><div class="damt num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}</div>
+   <div class="dact"><button class="btn small" data-tx="${t.id}">Ouvrir</button><button class="btn small danger" data-dupdel="${t.id}">Supprimer celle-ci</button></div></div>`;
+  const lim=Math.min(pairs.length,regLim);
+  return`<div class="duplist">${pairs.slice(0,lim).map(p=>`<div class="dpair"><div class="dph"><span>Même montant · ${p.gap?p.gap+" jour"+(p.gap>1?"s":"")+" d'écart":"même jour"}${p.same?" · même compte et même tiers":""}${p.a.ord&&p.a.ord===p.b.ord?" · même n° de commande":""}</span>${p.a.ord&&p.a.ord===p.b.ord?`<span class="num">${esc(p.a.ord)}</span>`:""}</div>${op(p.a)}${op(p.b)}<div class="dpf"><button class="btn small" data-notdup="${p.k}">Ce ne sont pas des doublons</button></div></div>`).join("")}</div>
+   ${pairs.length>lim?`<div class="regmore"><span>${lim} paires affichées sur ${pairs.length}</span><button class="btn" data-regmore="400">Afficher les suivantes</button><button class="btn" data-regmore="all">Tout afficher</button></div>`:""}`}
+function dupDelete(id){const i=S.tx.findIndex(x=>x.id===id);if(i<0)return;const t=S.tx[i];
+  confirmSheet("Supprimer cette opération ?",`${accById(t.accountId)?.name||""} · ${fdate(t.date)} · ${t.payee} · ${fmt(t.amount)}. L'autre opération de la paire est conservée.`,"Supprimer",()=>{snap("Avant suppression d'un doublon");S.tx.splice(i,1);commit();
+    toastUndo("Doublon supprimé",()=>{S.tx.splice(Math.min(i,S.tx.length),0,t);commit();toast("Suppression annulée")})})}
 function renderReg(){navRecord();renderReg0();addNav()}
 function renderReg0(){
   if(regAcc!=="all"&&!accById(regAcc))regAcc="all";
+  const DUPS=dupPairs(regAcc);const ORDN={};S.tx.forEach(t=>{if(t.ord)ORDN[t.ord]=(ORDN[t.ord]||0)+1});
   let list=S.tx.filter(t=>regAcc==="all"||t.accountId===regAcc);
   // solde courant (calculé sur l'ordre chronologique)
   const run={};if(regAcc!=="all"){let b=accById(regAcc).initial;list.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(t=>{b+=t.amount;run[t.id]=b})}
@@ -803,7 +847,7 @@ function renderReg0(){
   if(q)list=list.filter(t=>(t.payee+" "+(isSplit(t)?splitSummary(t):catLabel(t))+" "+(t.note||"")+" "+(t.mode||"")+" "+(t.chq||"")+" "+(t.ord||"")).toLowerCase().includes(q));
   const ym=today().slice(0,7);
   if(regF==="nr")list=list.filter(t=>t.status!=="R");else if(regF==="month")list=list.filter(t=>t.date.startsWith(ym));
-  else if(regF==="inc")list=list.filter(t=>missingOf(t).length);else if(regF==="ver")list=list.filter(t=>t.doubt);else if(regF==="dep")list=list.filter(t=>t.amount<0&&!t.transferId);else if(regF==="rev")list=list.filter(t=>t.amount>0&&!t.transferId);
+  else if(regF==="inc")list=list.filter(t=>missingOf(t).length);else if(regF==="ver")list=list.filter(t=>t.doubt);else if(regF==="dup"){const ids=new Set();DUPS.forEach(p=>{ids.add(p.a.id);ids.add(p.b.id)});list=list.filter(t=>ids.has(t.id))}else if(regF==="dep")list=list.filter(t=>t.amount<0&&!t.transferId);else if(regF==="rev")list=list.filter(t=>t.amount>0&&!t.transferId);
   {const k=regAcc+"|"+regF+"|"+regQ;if(k!==regLimKey){regLimKey=k;regLim=400}}list=sorted(list);regIds=[...new Set(list.map(t=>String(t.id).split("#")[0]))];const nR=list.filter(t=>t.status==="R").length,allSt=!list.length?"":nR===list.length?"all":nR?"mix":"none",allChip=`<button class="chip allr ${allSt==="all"?"R":allSt}" data-regall="1" title="${allSt==="all"?"Tout est rapproché · clic pour tout retirer":"Clic pour tout rapprocher"} (opérations affichées)" aria-label="Rapprocher ou non toutes les opérations affichées">${allSt==="all"?"R":allSt==="mix"?"–":"·"}</button>`;const sum=list.reduce((s,t)=>s+t.amount,0);
   const PI={all:"list",nr:"check",month:"calendar",dep:"down",rev:"up",inc:"pending",ver:"alert"};const pill=(k,l)=>`<button class="fpill" data-regf="${k}" aria-pressed="${regF===k}">${pillIco(PI[k])}${l}</button>`;
   const a=regAcc!=="all"?accById(regAcc):null;
@@ -813,11 +857,11 @@ function renderReg0(){
    <label class="cat" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="reg-closed" ${showClosed?"checked":""}> Afficher les comptes clôturés</label></div>
   ${a?`<div class="regsum num"><div>${kh("wallet",0,"Solde")}<b class="${balance(a.id)<0?"neg":""}">${fmt(balance(a.id))}</b></div><div>${kh("check",0,"Solde rapproché")}<b>${fmt(balance(a.id,true))}</b></div></div>`:""}
   <div class="toolbar"><input class="inp search" id="q" type="search" placeholder="Rechercher un tiers, une catégorie…" value="${esc(regQ)}"><span class="cat hint-pc">Clic sur le carré pour marquer une opération rapprochée <b>R</b></span></div>
-  <div class="fpills">${pill("all","Toutes")}${pill("month","Ce mois-ci")}${pill("dep","Dépenses")}${pill("rev","Revenus")}<span class="findic">${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&missingOf(t).length).length;return n||regF==="inc"?`<button class="fpill finc" data-regf="inc" aria-pressed="${regF==="inc"}">${pillIco("pending")}<span class="flbl"><span class="lbx">À </span>compléter<span class="lbx"> ·</span> ${n}</span></button>`:""})()}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&t.doubt).length;return n||regF==="ver"?`<button class="fpill fver" data-regf="ver" aria-pressed="${regF==="ver"}">${pillIco("alert")}<span class="flbl"><span class="lbx">À </span>vérifier<span class="lbx"> ·</span> ${n}</span></button>`:""})()}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&t.status!=="R").length;return n||regF==="nr"?`<button class="fpill frap" data-regf="nr" aria-pressed="${regF==="nr"}">${pillIco("check")}<span class="flbl"><span class="lbx">À </span>rapprocher<span class="lbx"> ·</span> ${n}</span></button>`:""})()}</span><span class="regtotal num">${list.length} opération${list.length>1?"s":""} · <b class="${sum<0?"neg":"pos"}">${sum>0?"+":""}${fmt(sum)}</b></span></div>
-  <div class="regall-mob">${list.length?allChip+" <span>Tout</span>":""}</div><div class="cat hint-mob">Glisse une opération vers la droite pour la rapprocher, vers la gauche pour la supprimer.</div>
-  <div class="tablewrap regwrap">${list.length?`<table class="reg"><thead><tr><th style="white-space:nowrap">${allChip}Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Mode</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
+  <div class="fpills">${pill("all","Toutes")}${pill("month","Ce mois-ci")}${pill("dep","Dépenses")}${pill("rev","Revenus")}<span class="findic">${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&missingOf(t).length).length;return n||regF==="inc"?`<button class="fpill finc" data-regf="inc" aria-pressed="${regF==="inc"}">${pillIco("pending")}<span class="flbl"><span class="lbx">À </span>compléter<span class="lbx"> ·</span> ${n}</span></button>`:""})()}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&t.doubt).length;return n||regF==="ver"?`<button class="fpill fver" data-regf="ver" aria-pressed="${regF==="ver"}">${pillIco("alert")}<span class="flbl"><span class="lbx">À </span>vérifier<span class="lbx"> ·</span> ${n}</span></button>`:""})()}${(()=>{const n=S.tx.filter(t=>(regAcc==="all"||t.accountId===regAcc)&&t.status!=="R").length;return n||regF==="nr"?`<button class="fpill frap" data-regf="nr" aria-pressed="${regF==="nr"}">${pillIco("check")}<span class="flbl"><span class="lbx">À </span>rapprocher<span class="lbx"> ·</span> ${n}</span></button>`:""})()}${DUPS.length||regF==="dup"?`<button class="fpill fdup" data-regf="dup" aria-pressed="${regF==="dup"}">${pillIco("dup")}<span class="flbl">Doublons<span class="lbx"> ?</span> · ${DUPS.length}</span></button>`:""}</span><span class="regtotal num">${regF==="dup"?`${DUPS.length} paire${DUPS.length>1?"s":""} · `:""}${list.length} opération${list.length>1?"s":""} · <b class="${sum<0?"neg":"pos"}">${sum>0?"+":""}${fmt(sum)}</b></span></div>
+  <div class="regall-mob">${list.length&&regF!=="dup"?allChip+" <span>Tout</span>":""}</div><div class="cat hint-mob">Glisse une opération vers la droite pour la rapprocher, vers la gauche pour la supprimer.</div>
+  ${regF==="dup"?dupHtml(DUPS):""}<div class="tablewrap regwrap" ${regF==="dup"?"hidden":""}>${list.length?`<table class="reg"><thead><tr><th style="white-space:nowrap">${allChip}Statut</th><th>Date</th><th>Tiers et catégorie</th><th class="r">Mode</th><th class="r">Montant</th>${a?'<th class="r">Solde</th>':'<th>Compte</th>'}</tr></thead><tbody>
   ${(()=>{let ld="";return list.slice(0,regLim).map(t=>{const h=t.date!==ld?`<tr class="dayrow"><td colspan="6">${dayLabel(t.date)}</td></tr>`:"";ld=t.date;const mi=missingOf(t);return h+`<tr data-tx="${t.id}"${t.doubt?` class="averif" title="À vérifier : ${esc(t.doubt)}"`:mi.length?` class="incomplete" title="À compléter : ${mi.join(", ")}"`:""}><td class="s"><button class="chip ${t.status}" data-status="${t.id}" aria-label="${t.status==="R"?"Annuler le rapprochement":"Marquer rapprochée"}">${t.status==="R"?"R":"·"}</button></td><td class="d num">${fdate(t.date)}</td>
-   <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}${isSplit(t)?`<span class="vtag">${pillIco("split")}Ventilée · ${t.splits.length} parts</span>`:""}${mi.length?`<span class="incbadge">À compléter : ${esc(mi.join(", "))}</span>`:""}</div>${t.ord?`<div class="ord">🛒 Commande <b>${esc(t.ord)}</b></div>`:""}${isSplit(t)?(()=>{const mx=t.splits.some(p=>p.amount>0)&&t.splits.some(p=>p.amount<0);return`<div class="rparts">${t.splits.map(p=>`<div class="rpart"><div class="catl">${catHtml(p.catId,p.subId)}</div><span class="pa num ${mx?(p.amount<0?"neg":"pos"):""}">${mx?(p.amount<0?"− ":"+ "):""}${fmt(Math.abs(p.amount))}</span>${p.note?`<div class="pnote">${p.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}</div>`).join("")}</div>`})():`<div class="catl">${t.transferId?`<span class="c2 cmut">Virement</span>`:catHtml(t.catId,t.subId)}</div>`}${t.note?`<div class="tnote">${t.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}${t.doubt?`<div class="whyv">${pillIco("alert")}<span>${esc(t.doubt)}</span></div>`:""}</div></div></td>
+   <td class="p"><div class="pwrap">${badge(t,"sm")}<div><div class="payee">${esc(t.payee)}${t.transferId?'<span class="xfer">VIREMENT</span>':""}${isSplit(t)?`<span class="vtag">${pillIco("split")}Ventilée · ${t.splits.length} parts</span>`:""}${mi.length?`<span class="incbadge">À compléter : ${esc(mi.join(", "))}</span>`:""}</div>${t.ord?`<div class="ord">🛒 Commande <b>${esc(t.ord)}</b>${ORDN[t.ord]>1?` · <span class="lk" data-ordq="${esc(t.ord)}" role="button" tabindex="0">${ORDN[t.ord]} opérations</span>`:""}</div>`:""}${isSplit(t)?(()=>{const mx=t.splits.some(p=>p.amount>0)&&t.splits.some(p=>p.amount<0);return`<div class="rparts">${t.splits.map(p=>`<div class="rpart"><div class="catl">${catHtml(p.catId,p.subId)}</div><span class="pa num ${mx?(p.amount<0?"neg":"pos"):""}">${mx?(p.amount<0?"− ":"+ "):""}${fmt(Math.abs(p.amount))}</span>${p.note?`<div class="pnote">${p.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}</div>`).join("")}</div>`})():`<div class="catl">${t.transferId?`<span class="c2 cmut">Virement</span>`:catHtml(t.catId,t.subId)}</div>`}${t.note?`<div class="tnote">${t.note.split("\n").map(l=>`<div>${esc(l)}</div>`).join("")}</div>`:""}${t.doubt?`<div class="whyv">${pillIco("alert")}<span>${esc(t.doubt)}</span></div>`:""}</div></div></td>
    <td class="md r">${t.mode?modeTag(t.mode):""}${t.chq?`<div class="chqn">n° ${esc(t.chq)}</div>`:""}</td><td class="m r num ${t.amount<0?"neg":"pos"}">${t.amount>0?"+":""}${fmt(t.amount)}${t.mode?`<div class="mdm">${modeTag(t.mode)}${t.chq?`<div class="chqn">n° ${esc(t.chq)}</div>`:""}</div>`:""}</td>${a?`<td class="b r num">${fmt(run[t.id])}</td>`:`<td class="b cat">${esc(accById(t.accountId)?.name)}</td>`}</tr>`}).join("")})()}
   </tbody></table>${list.length>regLim?`<div class="regmore"><span>${regLim} opérations affichées sur ${list.length}</span><button class="btn" data-regmore="400">Afficher les ${Math.min(400,list.length-regLim)} suivantes</button><button class="btn" data-regmore="all">Tout afficher</button></div>`:""}`:`<div class="empty">Aucune opération${q?" ne correspond à cette recherche":""}. Ajoute-en une avec « Nouvelle opération » ou importe un relevé dans Fichiers.</div>`}</div>`;
   bindSwipe();
@@ -921,7 +965,7 @@ const markQ=(txt,q)=>{if(!q)return esc(txt);const f=foldC(txt),i=f.indexOf(q);if
 function renderCat(){
   const cq=foldC(catQ.trim());
   const card=c=>{const cm=!cq||foldC(c.name).includes(cq),subs=cm?c.subs:c.subs.filter(s=>foldC(s.name).includes(cq));if(!cm&&!subs.length)return"";return`<div class="panel"><div class="cathead"><span class="ttl"><button class="icobtn" data-icon="${c.id}" aria-label="Changer l'icône de ${esc(c.name)}" title="Changer l'icône">${catBadge(c,"lg")}</button><h3>${markQ(c.name,cm?cq:"")}</h3></span><span class="row" style="align-items:center"><button class="x" data-delcat="${c.id}" aria-label="Supprimer la catégorie ${esc(c.name)}">×</button></span></div>
-    <div class="subs">${subs.map(s=>`<span class="sub">${xs({icon:subIcon(s,c),tint:c.tint})}<span>${markQ(s.name,cq)}</span><button class="x" data-delsub="${c.id}|${s.id}" aria-label="Supprimer ${esc(s.name)}">×</button></span>`).join("")||'<span class="cat">Aucune sous-catégorie</span>'}</div>
+    <div class="subs">${subs.map(s=>`<span class="sub">${xs({icon:subIcon(s,c),tint:c.tint})}<span>${markQ(s.name,cq)}</span><button class="x mg" data-mergesub="${c.id}|${s.id}" aria-label="Fusionner ${esc(s.name)} avec une autre sous-catégorie" title="Fusionner avec…">⇄</button><button class="x" data-delsub="${c.id}|${s.id}" aria-label="Supprimer ${esc(s.name)}">×</button></span>`).join("")||'<span class="cat">Aucune sous-catégorie</span>'}</div>
     <form class="addsub" data-addsub="${c.id}"><input class="inp" id="sub-${c.id}" placeholder="Nouvelle sous-catégorie" required><button class="btn small">Ajouter</button></form></div>`};
   main.innerHTML=`${banner()}<div class="head"><div><div class="eyebrow">${S.categories.length} catégories · <a href="#tiers" style="color:var(--accent)">voir les tiers</a></div><h1>Catégories et tiers</h1></div></div>
   <p class="lede">Une catégorie sert aussi bien aux dépenses qu'aux rentrées d'argent. Un remboursement classé dans sa catégorie d'origine vient en déduction de la dépense dans les indicateurs.</p>
@@ -940,6 +984,7 @@ function fileStatus(){const linked=fileHandle&&fileState!=="none";const st=fileS
    <div class="fstats">${stat(active().length,"comptes actifs","bank",0)}${stat(S.tx.length,"opérations","list",3)}${stat(S.categories.length,"catégories","tag",4)}${stat((S.payees||[]).length,"tiers","user",6)}${stat((S.recurring||[]).length,"récurrentes","calendar",1)}</div>
    <div class="cat">${ds.length?`Historique du ${fdate(ds[0])} au ${fdate(ds[ds.length-1])} · `:""}Version de l'appli : ${APP_VERSION}</div></section>`}
 function renderFile(){
+  if(snapIdx==null)snapList().then(()=>{if(view==="file")render()});
   main.innerHTML=`${banner()}<div class="head"><div><div class="eyebrow">Données</div><h1>Fichiers</h1></div></div>
   ${fileStatus()}
   <div class="grid g-file">
@@ -952,6 +997,8 @@ function renderFile(){
    :`<p>Toutes tes données tiennent dans un seul fichier <b>.json</b>. ${navigator.canShare&&!window.claude?"Sur ton téléphone, « Enregistrer » ouvre le menu de partage : choisis <b>OneDrive</b>. Pour reprendre tes données, « Ouvrir mon fichier » puis OneDrive.":"Range-le dans ton dossier OneDrive : tu l'ouvres depuis ton PC ou ton téléphone, et tu l'enregistres après tes saisies."}</p>
     <div class="row"><button class="btn primary" data-act="save">Enregistrer mon fichier</button><button class="btn" data-act="open">Ouvrir mon fichier</button>${navigator.canShare&&!window.claude?'<button class="btn" data-act="download">Télécharger une copie</button>':""}</div>`}</div>
    ${deferredInstall?`<div class="panel"><h2>Installer l'appli</h2><p>Ajoute PognonPILOT sur cet appareil : une icône, une fenêtre à elle, et un fonctionnement hors ligne.</p><div class="row"><button class="btn primary" data-act="install">Installer PognonPILOT</button></div></div>`:""}
+   <div class="panel snaps" style="grid-column:1/-1"><h2>Sauvegardes automatiques</h2><p>Les ${SNAP_MAX} dernières, conservées dans ce navigateur : une par jour, et une avant chaque import, ouverture de fichier, « Tout R », suppression de doublon ou fusion de sous-catégories.</p>
+    ${snapIdx==null?`<div class="cat">Chargement…</div>`:snapIdx.length?`<div class="tablewrap" style="overflow-x:auto"><table><tbody>${snapIdx.map(x=>`<tr><td class="num" style="white-space:nowrap">${new Date(x.at).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})}</td><td><span class="tag">${esc(x.reason)}</span></td><td class="r num" style="white-space:nowrap">${x.n.toLocaleString("fr-FR")} op.</td><td class="r"><button class="btn small" data-snaprest="${x.at}">Restaurer</button></td></tr>`).join("")}</tbody></table></div>`:`<div class="cat">Aucune sauvegarde pour l'instant : la première sera prise automatiquement.</div>`}</div>
    <div class="panel"><h2>Importer un relevé</h2><p>Fichier <b>.csv</b> ou <b>.xlsx</b> exporté par ta banque ou par ton classeur, ou export <b>.json</b> de Money Manager Ex. Tu choisis ensuite le compte et les colonnes à utiliser. Les doublons sont ignorés.</p>
     <div class="row"><button class="btn primary" data-act="import">Choisir un fichier</button></div></div>
    <div class="panel"><h2>Exporter</h2><p>Classeur Excel avec un onglet Opérations, Comptes et Catégories, ou CSV des opérations au format français (séparateur point-virgule).</p>
@@ -1165,7 +1212,7 @@ function addFreq(dateIso,f,day){const fr=FREQS.find(x=>x[0]===f)||FREQS[1];const
 const daysTo=dIso=>Math.round((new Date(dIso+"T12:00")-new Date(today()+"T12:00"))/864e5);
 function dueInfo(r){const n=daysTo(r.next);if(n<0)return{cls:"dlate",txt:`En retard de ${-n} j`,grp:0};if(n===0)return{cls:"dsoon",txt:"Aujourd'hui",grp:1};
   if(n<=3)return{cls:"dsoon",txt:n===1?"Demain":`Dans ${n} jours`,grp:1};if(n<=7)return{cls:"dweek",txt:`Dans ${n} jours`,grp:1};
-  if(n<=30)return{cls:"dlater",txt:`Dans ${n} jours`,grp:2};return{cls:"dlater",txt:fdate(r.next),grp:3}}
+  if(r.next.slice(0,7)===today().slice(0,7))return{cls:"dlater",txt:`Dans ${n} jours`,grp:2};return{cls:"dlater",txt:fdate(r.next),grp:3}}
 const recBadge=r=>{if(isSplit(r))return badge(r);const c=r.catId&&S.categories.find(x=>x.id===r.catId);if(!c)return`<span class="ico t7">${svgIco("calendar")}</span>`;const sb=c.subs.find(x=>x.id===r.subId);return`<span class="ico t${c.tint}">${svgIco(subIcon(sb,c))}</span>`};
 function advanceRec(id){const r=S.recurring.find(x=>x.id===id);if(!r)return;r.next=addFreq(r.next,r.freq,r.day);r.last=today()}
 function upcoming(days,accId){return S.recurring.filter(r=>r.active&&(!accId||r.accountId===accId)&&daysTo(r.next)<=days).sort((a,b)=>a.next<b.next?-1:1)}
@@ -1294,7 +1341,7 @@ function regAllR(){const ids=new Set(regIds);const sel=S.tx.filter(t=>ids.has(t.
   const aff=S.tx.filter(t=>ids.has(t.id)||(t.transferId&&tids.has(t.transferId)));const toR=!sel.every(t=>t.status==="R"),n=sel.length,a=regAcc!=="all"?accById(regAcc):null;
   const where=(a?a.name:"tous les comptes")+(regQ.trim()?` (recherche « ${regQ.trim()} »)`:regF!=="all"?" (filtre en cours)":"");
   confirmSheet(toR?`Rapprocher ${n} opération${n>1?"s":""} ?`:`Retirer le R de ${n} opération${n>1?"s":""} ?`,`Les ${n} opération${n>1?"s":""} affichée${n>1?"s":""} de ${where} seront ${toR?"marquées R":"remises en non rapprochées"}. Pour les virements, l'autre côté suit.`,toR?"Rapprocher":"Retirer le R",()=>{
-    const prev=new Map(aff.map(t=>[t.id,t.status]));aff.forEach(t=>t.status=toR?"R":"");commit();
+    snap("Avant « Tout R »");const prev=new Map(aff.map(t=>[t.id,t.status]));aff.forEach(t=>t.status=toR?"R":"");commit();
     toastUndo(`${n} opération${n>1?"s":""} ${toR?"rapprochée"+(n>1?"s":""):": R retiré"}`,()=>{S.tx.forEach(t=>{if(prev.has(t.id))t.status=prev.get(t.id)});commit();toast("Modification annulée")})})}
 function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
 
@@ -1302,6 +1349,24 @@ const byName=(a,b)=>String(a.name).localeCompare(String(b.name),"fr",{sensitivit
 function catOptions(kind,sel){return S.categories.slice().sort(byName).map(c=>`<optgroup label="${esc(c.name)}"><option value="${c.id}|" ${sel===c.id+"|"?"selected":""}>${esc(c.name)} (général)</option>${c.subs.slice().sort(byName).map(s=>`<option value="${c.id}|${s.id}" ${sel===c.id+"|"+s.id?"selected":""}>${esc(c.name)} › ${esc(s.name)}</option>`).join("")}</optgroup>`).join("")}
 function accOptions(sel,all){return S.accounts.filter(a=>all||!a.closed||a.id===sel).map(a=>`<option value="${a.id}" ${a.id===sel?"selected":""}>${esc(a.name)}${a.closed?" (clôturé)":""}</option>`).join("")}
 
+function mergeSubSheet(key){const [ci,si]=key.split("|");const c=S.categories.find(x=>x.id===ci),sb=c&&c.subs.find(x=>x.id===si);if(!sb)return;
+  const opts=S.categories.slice().sort(byName).map(k=>{const l=k.subs.filter(x=>!(k.id===ci&&x.id===si)).sort(byName);return l.length?`<optgroup label="${esc(k.name)}">${l.map(x=>`<option value="${k.id}|${x.id}">${esc(k.name)} › ${esc(x.name)}</option>`).join("")}</optgroup>`:""}).join("");
+  const hit=o=>o&&o.catId===ci&&o.subId===si;
+  const nT=S.tx.filter(hit).length,nP=S.tx.reduce((n,t)=>n+(t.splits||[]).filter(hit).length,0),nR=(S.recurring||[]).reduce((n,r)=>n+(hit(r)?1:0)+(r.splits||[]).filter(hit).length,0);
+  openSheet(`<h2>Fusionner « ${esc(sb.name)} »</h2><p style="color:var(--muted);margin:0 0 12px">${esc(c.name)} › ${esc(sb.name)}</p>
+   <div class="field full"><label for="mg-to">Avec la sous-catégorie</label><select class="inp" id="mg-to"><option value="">Choisis la sous-catégorie à garder</option>${opts}</select></div>
+   <div class="banner" style="margin-top:12px;display:block" id="mg-sum"></div>
+   <div class="actions"><div class="row"></div><div class="row"><button class="btn" data-close>Annuler</button><button class="btn primary" id="mg-go" disabled>Fusionner</button></div></div>`);
+  const sel=document.getElementById("mg-to"),sum=document.getElementById("mg-sum"),go=document.getElementById("mg-go");
+  const upd=()=>{const v=sel.value;const [tc,ts]=v.split("|");const k=S.categories.find(x=>x.id===tc),x=k&&k.subs.find(y=>y.id===ts);go.disabled=!x;
+    const li=[`${nT} opération${nT>1?"s":""}`,`${nP} part${nP>1?"s":""} de ventilation`,`${nR} récurrente${nR>1?"s":""}`];
+    sum.innerHTML=`• ${li.join("<br>• ")}<br>${x?`seront reportées sur <b>${esc(k.name)} › ${esc(x.name)}</b>.`:"seront reportées sur la sous-catégorie choisie."}<br>« ${esc(sb.name)} » sera ensuite supprimée.`};
+  sel.onchange=upd;upd();
+  go.onclick=()=>{const [tc,ts]=sel.value.split("|");if(!ts)return;snap("Avant fusion de sous-catégories");const ch=[];
+    const mv=o=>{if(hit(o)){ch.push([o,o.catId,o.subId]);o.catId=tc;o.subId=ts}};
+    S.tx.forEach(t=>{mv(t);(t.splits||[]).forEach(mv)});(S.recurring||[]).forEach(r=>{mv(r);(r.splits||[]).forEach(mv)});
+    const idx=c.subs.indexOf(sb);c.subs.splice(idx,1);closeSheet();commit();
+    toastUndo(`« ${sb.name} » fusionnée (${ch.length} élément${ch.length>1?"s":""} reporté${ch.length>1?"s":""})`,()=>{c.subs.splice(idx,0,sb);ch.forEach(([o,a,b])=>{o.catId=a;o.subId=b});commit();toast("Fusion annulée")})}}
 function dupTx(id){const t=S.tx.find(x=>x.id===id);if(!t)return;const base={dup:true,dupOf:t.date,date:today(),mode:t.mode||"",note:t.note||""};
   if(t.transferId){const pair=S.tx.find(x=>x.transferId===t.transferId&&x.id!==t.id),out=t.amount<0?t:pair,inn=t.amount<0?pair:t;txSheet(null,"vir",{...base,amount:Math.abs(t.amount),dupFrom:out?.accountId||t.accountId,dupTo:inn?.accountId||""});return}
   txSheet(null,t.amount<0?"dep":"rev",{...base,accountId:t.accountId,payee:t.payee,amount:t.amount,catId:t.catId||null,subId:t.subId||null,splits:isSplit(t)?t.splits.map(p=>({...p})):null})}
@@ -1321,7 +1386,8 @@ function txSheet(id,presetMode,pre){
      <div class="field full"><label for="f-amt">Montant (€)</label><input class="inp amountinp num" id="f-amt" inputmode="decimal" required placeholder="0,00" value="${tv&&tv.amount?String(Math.abs(tv.amount)).replace(".",","):""}"></div>
      <div class="field"><label for="f-acc">${isV?"Depuis le compte":"Compte"}</label><select class="inp" id="f-acc">${accOptions(base?base.accountId:defAcc)}</select></div>
      ${isV?`<div class="field"><label for="f-to">Vers le compte</label><select class="inp" id="f-to">${accOptions(to?to.accountId:S.accounts.find(a=>a.id!==defAcc)?.id)}</select></div>`:`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${tv?tv.date:today()}" required></div>`}
-     ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required></div><div class="field"><label for="f-ord">N° de commande</label><input class="inp num" id="f-ord" autocomplete="off" value="${esc(t&&!isV?t.ord||"":"")}" placeholder="Facultatif (ex. 405-1234567-8901234)"></div>`}
+     ${isV?`<div class="field"><label for="f-date">Date</label><input class="inp" type="date" id="f-date" value="${base?base.date:today()}" required></div>`:`<div class="field"><label for="f-payee">Tiers</label><input class="inp" id="f-payee" autocomplete="off" value="${esc(tv?tv.payee:"")}" placeholder="Choisis ou saisis un tiers" required></div><div class="field"><label for="f-ord">N° de commande</label><input class="inp num" id="f-ord" autocomplete="off" value="${esc(t&&!isV?t.ord||"":"")}" placeholder="Facultatif (ex. 405-1234567-8901234)"></div>${(()=>{if(!t||!t.ord)return"";const o=S.tx.filter(x=>x.ord===t.ord&&x.id!==t.id).sort((a,b)=>a.date<b.date?-1:1);if(!o.length)return"";const tot=o.reduce((s,x)=>s+x.amount,t.amount);
+       return`<div class="field full"><div class="lops"><div class="lh">🛒 Même commande · ${o.length} autre${o.length>1?"s":""} opération${o.length>1?"s":""}</div>${o.map(x=>`<button type="button" class="lr" data-tx="${x.id}"><span class="d num">${fdate(x.date)}</span><span>${esc(accById(x.accountId)?.name||"")} · ${esc(x.note?x.note.split("\n")[0]:x.payee)}</span><span class="num ${x.amount<0?"neg":"pos"}">${x.amount>0?"+":""}${fmt(x.amount)}</span></button>`).join("")}<div class="ls"><span>Solde de la commande</span><span class="num">${tot>0?"+":""}${fmt(tot)}</span></div></div></div>`})()}`}
      ${isV?"":`<div class="field" id="catField" ${splitInit?"hidden":""}><label for="f-cat" class="lblrow">Catégorie <button type="button" class="link" id="toSplit">${pillIco("split")}Ventiler</button></label><select class="inp" id="f-cat"><option value="">Non catégorisé</option>${catOptions(mode,tv?`${tv.catId||""}|${tv.subId||""}`:"")}</select></div><div class="field full" id="splitField" ${splitInit?"":"hidden"}><label class="lblrow">Ventilation sur plusieurs catégories <button type="button" class="link" id="unSplit">Annuler la ventilation</button></label><div id="splitHost"></div></div>`}
      <div class="field"><label for="f-mode">Mode de paiement</label><select class="inp" id="f-mode">${modeOptions(tv&&tv.mode!=null?tv.mode:(isV?"Virement":""))}</select></div>
      <div class="field" id="chqField" ${(tv&&tv.mode)==="Chèque"?"":"hidden"}><label for="f-chq">N° de chèque</label><input class="inp num" id="f-chq" inputmode="numeric" autocomplete="off" value="${esc((isV?base:tv)?.chq||"")}" placeholder="Facultatif"></div>
@@ -1526,7 +1592,7 @@ function mmexSheet(d){
     modal.querySelectorAll("[data-mmc]").forEach(e=>e.onchange=()=>{mapping[e.dataset.mmc]=e.value});
     modal.querySelectorAll("[data-mmp]").forEach(e=>{attachPayeePicker(e);e.addEventListener("input",()=>{payeeMap[e.dataset.mmp]=e.value});e.addEventListener("change",()=>{payeeMap[e.dataset.mmp]=e.value})});
     modal.querySelectorAll("[data-mmo]").forEach(e=>e.onchange=()=>{keep();if(otherMap[e.dataset.mmo]===document.getElementById("mm-acc").value){otherMap[e.dataset.mmo]="";toast("L'autre compte doit être différent du compte importé.")}draw()});
-    document.getElementById("mm-go").onclick=()=>{keep();const acc2=document.getElementById("mm-acc").value,A=accById(acc2);let n=0,nv=0;
+    document.getElementById("mm-go").onclick=()=>{keep();snap("Avant import MMEX");const acc2=document.getElementById("mm-acc").value,A=accById(acc2);let n=0,nv=0;
       let nc=0,nd=0;plan(acc2).forEach(p=>{const {x,vir,dup}=p;if(dup)return;const dv=doubtOf(p),dvo=dv?{doubt:dv}:{};if(dv)nd++;
         if(vir){const oid=p.oid;
           if(oid){const B=accById(oid);const leg=p.leg||p.conv;
@@ -1584,7 +1650,7 @@ async function handleImport(file){
   const prev=()=>{const l=build();document.getElementById("i-prev").innerHTML=l.length?`<table><thead><tr><th>Date</th><th>Libellé</th><th class="r">Montant</th><th>Catégorie</th></tr></thead><tbody>${l.slice(0,5).map(x=>`<tr><td class="num">${fdate(x.date)}</td><td>${esc(x.payee)}</td><td class="r num ${x.amount<0?"neg":"pos"}">${fmt(x.amount)}</td><td>${esc([x.cat,x.sub].filter(Boolean).join(" › "))}</td></tr>`).join("")}</tbody></table><div class="cat" style="padding:8px 10px">${l.length} opérations valides</div>`:`<div class="empty">Aucune ligne valide avec ces colonnes : il faut au moins une date et un montant.</div>`};
   modal.querySelectorAll("select").forEach(s=>s.onchange=prev);prev();
   document.getElementById("doImport").onclick=()=>{
-    const acc=get("i-acc"),l=build();if(!l.length){toast("Rien à importer avec ces colonnes.");return}
+    const acc=get("i-acc"),l=build();if(!l.length){toast("Rien à importer avec ces colonnes.");return}snap("Avant import d'un relevé");
     const key=t=>`${t.accountId}|${t.date}|${t.amount.toFixed(2)}|${(t.payee||"").toLowerCase()}`;const seen=new Set(S.tx.map(key));
     let n=0,dup=0,newCats=0;
     l.forEach(x=>{const t={id:uid(),accountId:acc,date:x.date,payee:x.payee||"Sans libellé",amount:Math.round(x.amount*100)/100,catId:null,subId:null,status:"",note:"",mode:(PAY_MODES.find(m=>norm(m[0])===norm(x.mode))||[x.mode||""])[0]};
@@ -1606,7 +1672,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="54";
+const APP_VERSION="56";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
@@ -1643,6 +1709,7 @@ async function openPicked(){
   if(!FS_OK){document.getElementById("fileJson").click();return}
   let h;try{[h]=await showOpenFilePicker({types:JSON_TYPES,multiple:false})}catch(e){return}
   let f;try{f=await h.getFile()}catch(e){toast(`Impossible d'accéder à « ${h.name} ». Si OneDrive le synchronise, attends la fin puis réessaie.`);return}if(await openJson(f,h))return}
+const buildS=o=>upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},...(Array.isArray(o.homeAccs)?{homeAccs:o.homeAccs}:{}),...(o.logos&&typeof o.logos==="object"?{logos:o.logos}:{}),...(o.mig40?{mig40:o.mig40}:{}),...(Array.isArray(o.notDup)?{notDup:o.notDup}:{}),tx:o.tx}));
 async function openJson(file,handle){
   const ko=m=>{toast(m);return false};let txt,o;
   try{txt=await file.text()}catch(e){return ko(`Impossible de lire « ${file.name} ». Si OneDrive est en train de le synchroniser, attends la fin (icône verte) puis réessaie avec « Ouvrir mon fichier ».`)}
@@ -1651,7 +1718,7 @@ async function openJson(file,handle){
   try{o=JSON.parse(txt)}catch(e){return ko(`« ${file.name} » est incomplet ou abîmé (${Math.round(txt.length/1024)} Ko lus). Vérifie dans OneDrive qu'il n'existe pas une autre copie plus récente, par exemple « ${file.name.replace(/\.json$/i,"")} (1).json ».`)}
   if(o&&o.data&&o.data.accounts&&!o.accounts)o=o.data;
   if(!o||!Array.isArray(o.accounts)||!Array.isArray(o.tx)||!Array.isArray(o.categories))return ko(`« ${file.name} » n'est pas un fichier de données PognonPILOT (il ne contient pas de comptes et d'opérations).`);
-  const go=async()=>{S=upgrade(migrate({version:1,sample:false,init:"pp31",accounts:o.accounts,categories:o.categories,payees:o.payees||[],recurring:o.recurring||[],mmexMap:o.mmexMap||{},...(Array.isArray(o.homeAccs)?{homeAccs:o.homeAccs}:{}),...(o.logos&&typeof o.logos==="object"?{logos:o.logos}:{}),...(o.mig40?{mig40:o.mig40}:{}),tx:o.tx}));
+  const go=async()=>{if(S&&S.accounts.length&&!S.sample)await snap("Avant ouverture d'un fichier");S=buildS(o);
     if(handle)await linkHandle(handle);dirty=false;lastSaved=Math.max(Date.now(),file.lastModified||0);cache();view="dash";render();
     toast(`${handle?"Fichier lié":"Fichier ouvert"} : ${S.accounts.length} comptes, ${S.tx.length} opérations`)};
   if(dirty&&S.accounts.length)confirmSheet("Remplacer les données actuelles ?","Tes dernières modifications n'ont pas été enregistrées. Elles seront perdues si tu ouvres ce fichier.","Ouvrir quand même",go);else await go();
@@ -1690,6 +1757,11 @@ document.addEventListener("click",async e=>{
   const ra=e.target.closest("[data-regall]");if(ra){e.stopPropagation();regAllR();return}
   const rm=e.target.closest("[data-regmore]");if(rm){const y=window.scrollY;regLim=rm.dataset.regmore==="all"?1e9:regLim+400;renderReg();window.scrollTo(0,y);return}
   const fp=e.target.closest("[data-regf]");if(fp){regF=fp.dataset.regf;renderReg();return}
+  const oq=e.target.closest("[data-ordq]");if(oq){e.stopPropagation();closeSheet();regAcc="all";regF="all";regQ=oq.dataset.ordq;view="reg";render();window.scrollTo(0,0);return}
+  const ddl=e.target.closest("[data-dupdel]");if(ddl){e.stopPropagation();dupDelete(ddl.dataset.dupdel);return}
+  const ndp=e.target.closest("[data-notdup]");if(ndp){const k=ndp.dataset.notdup;S.notDup=[...new Set([...(S.notDup||[]),k])];commit();toastUndo("Paire écartée des doublons",()=>{S.notDup=(S.notDup||[]).filter(x=>x!==k);commit()});return}
+  const sr=e.target.closest("[data-snaprest]");if(sr){restoreSnap(+sr.dataset.snaprest);return}
+  const mg=e.target.closest("[data-mergesub]");if(mg){mergeSubSheet(mg.dataset.mergesub);return}
   const rk=e.target.closest("[data-acrk]");if(rk){e.stopPropagation();const a=accById(rk.dataset.acrk);if(a){if(a.rkDate)delete a.rkDate;else a.rkDate=today();commit();toast(a.rkDate?"Compte marqué rapproché":"Rapprochement retiré")}return}
   const af=e.target.closest("[data-accfiche]");if(af){accFiche(af.dataset.accfiche);return}
   const tf=e.target.closest("[data-txfor]");if(tf){closeSheet();regAcc=tf.dataset.txfor;txSheet();return}
@@ -1771,11 +1843,21 @@ document.addEventListener("input",e=>{if(e.target.id==="catq"){catQ=e.target.val
 document.addEventListener("change",e=>{if(e.target.id==="autosave"){autoSave=e.target.checked;try{localStorage.setItem(KEY+".auto",autoSave?"1":"0")}catch(_){}if(autoSave&&dirty)scheduleAutoSave();renderChip();return}if(e.target.id==="reg-acc"){regAcc=e.target.value;renderReg();return}if(e.target.id==="reg-closed"){showClosed=e.target.checked;renderReg();return}const k={"r-period":"period","r-from":"from","r-to":"to","r-accmode":"accMode","r-catmode":"catMode","r-paymode":"payMode","r-group":"group","r-evomode":"evoMode","r-evofrom":"evoFrom","r-evoto":"evoTo","r-gran":"gran"}[e.target.id];
   if(k){rep[k]=e.target.value;if(["catMode","group"].includes(k))rep.drill=null;renderRep()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal.innerHTML)closeSheet()});
+/* bouton retour : ferme la fenêtre ouverte, sinon écran précédent, sinon double appui pour quitter */
+let modalEdited=false,backArm=0,modalBackArm=0;
+modal.addEventListener("input",()=>{modalEdited=true});new MutationObserver(()=>{if(!modal.innerHTML)modalEdited=false}).observe(modal,{childList:true});
+try{history.replaceState({pp:0},"");history.pushState({pp:1},"")}catch(e){}
+window.addEventListener("popstate",e=>{if(e.state&&e.state.pp===1)return;
+  const rearm=()=>{try{history.pushState({pp:1},"")}catch(_){}};
+  if(modal.innerHTML){if(modalEdited&&Date.now()-modalBackArm>2000){modalBackArm=Date.now();toast("Modifications non enregistrées : appuie encore sur retour pour fermer la fenêtre");rearm();return}closeSheet();rearm();return}
+  if(NAVH.p>0){navGo(-1);rearm();return}
+  if(Date.now()-backArm<2000){history.back();return}
+  backArm=Date.now();toast("Appuie encore sur retour pour quitter");rearm()});
 document.getElementById("fab").onclick=()=>txSheet();
 document.getElementById("fileJson").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)openJson(f)};
 document.getElementById("fileImport").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)handleImport(f)};
 
-load();render();loadIdb().then(()=>initFile());
+load();render();loadIdb().then(()=>initFile()).then(()=>setTimeout(dailySnap,1500));
 </script>
 
 </body>
