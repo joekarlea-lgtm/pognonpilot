@@ -164,7 +164,9 @@ th.r,td.r{text-align:right}
 .preview table{min-width:420px;font-size:13px}
 .preview td,.preview th{padding:7px 10px}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:12px;font-weight:500;z-index:60;max-width:calc(100% - 32px)}
-.fab{display:none}
+.fab{display:inline-flex;position:fixed;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:31;align-items:center;gap:8px;padding:13px 20px 13px 16px;border-radius:16px;background:var(--accent);color:var(--accent-ink);border:0;font:inherit;font-weight:700;font-size:15px;box-shadow:0 10px 24px rgba(0,0,0,.25);cursor:pointer}
+.fab .fabp{font-size:22px;line-height:1;font-weight:600}.fab:hover{filter:brightness(1.08)}.fab:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.fab[hidden]{display:none!important}body:has(#modal .scrim) .fab{display:none}
 .lede{color:var(--muted);margin:-8px 0 18px;max-width:68ch}
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
@@ -198,7 +200,7 @@ tfoot td{font-weight:700;background:var(--surface-2);border-bottom:0}
   .nav{flex-direction:column;gap:3px;font-size:11.5px;padding:7px 4px;flex:1;align-items:center}
   .g-dash{grid-template-columns:minmax(0,1fr)}
   .head .btn.primary{display:none}
-  .fab{display:inline-flex;position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:31;width:56px;height:56px;border-radius:18px;background:var(--accent);color:var(--accent-ink);border:0;font-size:28px;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,.25);cursor:pointer}
+  .fab .fabl{display:none}.fab .fabp{font-size:28px}.fab{gap:0;padding:0;font-size:28px;display:inline-flex;position:fixed;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:31;width:56px;height:56px;border-radius:18px;background:var(--accent);color:var(--accent-ink);border:0;font-size:28px;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,.25);cursor:pointer}
   .scrim{place-items:end center;padding:0}
   .sheet{border-radius:22px 22px 0 0;width:100%;max-height:92%;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
   .form{grid-template-columns:1fr}
@@ -483,7 +485,7 @@ mark{background:color-mix(in srgb,#F4CD62 45%,transparent);color:inherit;border-
   </nav>
   <main id="main"></main>
 </div>
-<button class="fab" id="fab" aria-label="Nouvelle opération">+</button>
+<button class="fab" id="fab" aria-label="Nouvelle opération" title="Nouvelle opération (touche N)"><span class="fabp">+</span><span class="fabl">Nouvelle opération</span></button>
 <div id="modal"></div>
 <input type="file" id="fileJson" accept=".json,application/json" hidden>
 <input type="file" id="fileImport" accept=".csv,.xlsx,.xls,.json,text/csv,application/json" hidden>
@@ -756,6 +758,7 @@ function addNav(){main.querySelectorAll(".hnav").forEach(x=>x.remove());if(NAVH.
 const navBtns=()=>{const pv=NAVH.h[NAVH.p-1],nx=NAVH.h[NAVH.p+1];return`<div class="hnav"><button class="nb" data-hist="-1" ${pv?"":"disabled"} title="${pv?"Retour : "+esc(navLabel(pv)):"Pas d'écran précédent"}" aria-label="Retour">‹<span>${pv?esc(navLabel(pv)):"Retour"}</span></button><button class="nb" data-hist="1" ${nx?"":"disabled"} title="${nx?"Suivant : "+esc(navLabel(nx)):"Pas d'écran suivant"}" aria-label="Suivant">›</button></div>`};
 function render(){
   navRecord();
+  {const f=document.getElementById("fab");if(f)f.hidden=!["dash","reg","acc"].includes(view)}
   document.querySelectorAll(".nav").forEach(b=>b.setAttribute("aria-current",b.dataset.view===view?"page":"false"));
   renderChip();
   ({dash:renderDash,reg:renderReg,rec:renderRec,acc:renderAcc,rep:renderRep,cat:renderCat,file:renderFile})[view]();addNav();
@@ -1672,7 +1675,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="57";
+const APP_VERSION="58";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
@@ -1843,6 +1846,7 @@ document.addEventListener("input",e=>{if(e.target.id==="catq"){catQ=e.target.val
 document.addEventListener("change",e=>{if(e.target.id==="autosave"){autoSave=e.target.checked;try{localStorage.setItem(KEY+".auto",autoSave?"1":"0")}catch(_){}if(autoSave&&dirty)scheduleAutoSave();renderChip();return}if(e.target.id==="reg-acc"){regAcc=e.target.value;renderReg();return}if(e.target.id==="reg-closed"){showClosed=e.target.checked;renderReg();return}const k={"r-period":"period","r-from":"from","r-to":"to","r-accmode":"accMode","r-catmode":"catMode","r-paymode":"payMode","r-group":"group","r-evomode":"evoMode","r-evofrom":"evoFrom","r-evoto":"evoTo","r-gran":"gran"}[e.target.id];
   if(k){rep[k]=e.target.value;if(["catMode","group"].includes(k))rep.drill=null;renderRep()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal.innerHTML)closeSheet()});
+document.addEventListener("keydown",e=>{if((e.key==="n"||e.key==="N")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!modal.innerHTML&&!e.target.closest("input,textarea,select,[contenteditable]")&&["dash","reg","acc"].includes(view)){e.preventDefault();txSheet()}});
 /* bouton retour : ferme la fenêtre ouverte, sinon écran précédent, sinon double appui pour quitter */
 let modalEdited=false,backArm=0,modalBackArm=0;
 modal.addEventListener("input",()=>{modalEdited=true});new MutationObserver(()=>{if(!modal.innerHTML)modalEdited=false}).observe(modal,{childList:true});
