@@ -400,6 +400,9 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 
 .mdm{display:none}.chqn{margin-top:3px;font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}table.reg td.md{width:1%;white-space:nowrap;padding-right:2px}table.reg td.md .mtag{margin-left:0}
 .tnote{margin-top:4px;padding-left:8px;border-left:2px solid var(--line);font-size:13px;line-height:1.4;color:color-mix(in srgb,var(--fg) 78%,var(--muted));overflow-wrap:anywhere}.tnote div+div{margin-top:2px}
+.banner.mobsend{border-color:color-mix(in srgb,var(--warn) 55%,transparent);background:color-mix(in srgb,var(--warn) 14%,var(--surface))}.banner.mobsend b{color:var(--warn)}
+.nav.pend{position:relative}.nav.pend::after{content:"";position:absolute;top:6px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.actions.col1{display:flex;flex-direction:column;gap:8px}.actions.col1 .btn{width:100%;justify-content:center}
 .n1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:0;min-width:100%;max-width:100%}.nctx{color:var(--ctx);font-weight:700}.pwrap>div>.catl{width:0;min-width:100%}.pwrap>div{min-width:0;flex:1}td.p{width:100%}.nctx.pay{color:var(--neg)}
 textarea.tnoteinp{resize:vertical;min-height:42px;line-height:1.4;font:inherit}
 .mtag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px 1px 5px;border-radius:99px;font-size:11.5px;font-weight:600;vertical-align:1px;margin-left:4px;white-space:nowrap}.mtag .pi{width:12px;height:12px}
@@ -616,7 +619,14 @@ async function restoreSnap(at){const txt=await idb.get("snap:"+at);if(!txt){toas
     await snap("Avant restauration");S=buildS(o);commit();toast("Sauvegarde restaurée")})}
 async function loadIdb(){try{const o=await idb.get("cache");if(!o||!o.data||!(o.stamp>cacheStamp))return;
   const d=upgrade(migrate(o.data));if(d.sample||!/^pp3/.test(d.init||""))return;S=d;dirty=!!o.dirty;lastSaved=o.lastSaved||null;cacheStamp=o.stamp;render()}catch(e){}}
-function commit(){dirty=true;cache();render();scheduleAutoSave()}
+const MOBSEND=()=>IS_MOBILE&&!FS_OK&&!window.claude&&S&&S.accounts.length&&!S.sample;
+function pendGet(){try{return JSON.parse(localStorage.getItem(KEY+".pend"))||null}catch(e){return null}}
+function pendSet(v){try{v?localStorage.setItem(KEY+".pend",JSON.stringify(v)):localStorage.removeItem(KEY+".pend")}catch(e){}}
+function pendAdd(){if(!MOBSEND())return;const p=pendGet()||{n:0,since:Date.now()};p.n++;pendSet(p)}
+const hm=t=>new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+function pendWhen(t){const d=new Date(t),td=new Date();const y=new Date(td);y.setDate(td.getDate()-1);const same=(a,b)=>a.toDateString()===b.toDateString();return same(d,td)?`depuis ${hm(t)}`:same(d,y)?`depuis hier, ${hm(t)}`:`depuis le ${d.toLocaleDateString("fr-FR")} à ${hm(t)}`}
+function pendTxt(){const p=pendGet();const n=p&&p.n||0;return`${n?`${n} changement${n>1?"s":""}`:"Des changements"}${p&&p.since?" "+pendWhen(p.since):""}`}
+function commit(){dirty=true;pendAdd();cache();render();scheduleAutoSave()}
 
 /* ---------- calculs ---------- */
 const active=()=>S.accounts.filter(a=>!a.closed);
@@ -782,6 +792,7 @@ function renderChip(){
     :dirty?`<b>Non enregistré</b>${linked&&autoSave?"Enregistrement en cours…":"Pense à enregistrer ton fichier"}`
     :`<b>À jour</b>${linked?esc(fileHandle.name)+(when?" · "+when:""):when?"Fichier enregistré le "+when:"Aucun fichier lié"}`;
   const ib=document.getElementById("installbtn");if(ib)ib.hidden=!deferredInstall;
+  document.querySelectorAll('.nav[data-view="file"]').forEach(b=>b.classList.toggle("pend",!!(MOBSEND()&&dirty)));
 }
 const NAVH={h:[],p:-1,lock:false};
 const VIEW_NAMES={dash:"Accueil",reg:"Opérations",rec:"Échéancier",acc:"Comptes",rep:"Rapports",cat:"Catégories",file:"Fichiers"};
@@ -801,7 +812,8 @@ function render(){
   renderChip();
   ({dash:renderDash,reg:renderReg,rec:renderRec,acc:renderAcc,rep:renderRep,cat:renderCat,file:renderFile})[view]();addNav();
 }
-const banner=()=>fileBanner()+(S.sample?`<div class="banner"><span><b>Données d'exemple.</b> Explore librement, puis pars d'un fichier vierge pour saisir tes vrais comptes.</span><button class="btn small" data-act="reset">Commencer avec mes comptes</button></div>`:"");
+const mobBanner=()=>MOBSEND()&&dirty?`<div class="banner mobsend"><span><b>⚠ Modifications pas encore envoyées vers OneDrive</b><br>${pendTxt()}. Ton PC ne les verra qu'après l'envoi.</span><button class="btn small primary" data-act="save">Envoyer vers OneDrive</button></div>`:"";
+const banner=()=>mobBanner()+fileBanner()+(S.sample?`<div class="banner"><span><b>Données d'exemple.</b> Explore librement, puis pars d'un fichier vierge pour saisir tes vrais comptes.</span><button class="btn small" data-act="reset">Commencer avec mes comptes</button></div>`:"");
 
 function homeAccs(){const ok=id=>{const a=accById(id);return a&&!a.closed};
   if(Array.isArray(S.homeAccs))return S.homeAccs.filter(ok);
@@ -1743,7 +1755,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="62";
+const APP_VERSION="63";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
@@ -1758,7 +1770,7 @@ let saveTimer=null,deferredInstall=null;
 async function perm(h,ask){const o={mode:"readwrite"};try{if(await h.queryPermission(o)==="granted")return true;return !!ask&&await h.requestPermission(o)==="granted"}catch(e){return false}}
 const dataJson=()=>JSON.stringify({app:"PognonPILOT",...S,sample:false},null,1);
 async function writeHandle(){const w=await fileHandle.createWritable();await w.write(dataJson());await w.close()}
-function markSaved(){dirty=false;lastSaved=Date.now();cache();renderChip()}
+function markSaved(){dirty=false;pendSet(null);lastSaved=Date.now();cache();renderChip()}
 async function linkHandle(h){fileHandle=h;fileState="linked";await idb.set("handle",h)}
 async function saveJson(){
   if(fileHandle&&await perm(fileHandle,true)){
@@ -1768,7 +1780,7 @@ async function saveJson(){
     catch(e){if(e.name==="AbortError")return}}
   const file=new File([dataJson()],"pognonpilot-donnees.json",{type:"application/json"});
   if(!window.claude&&navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:"PognonPILOT"});markSaved();toast("Fichier envoyé");return}catch(e){if(e.name==="AbortError")return}}
+    try{await navigator.share({files:[file],title:"PognonPILOT"});markSaved();render();toast(`✓ Envoyé vers OneDrive à ${hm(Date.now())}`);return}catch(e){if(e.name==="AbortError")return}}
   await downloadJson();
 }
 async function downloadJson(){if(await offerFile("pognonpilot-donnees.json",dataJson(),"application/json")){markSaved();toast("Fichier enregistré")}}
@@ -1789,7 +1801,7 @@ async function openJson(file,handle){
   try{o=JSON.parse(txt)}catch(e){return ko(`« ${file.name} » est incomplet ou abîmé (${Math.round(txt.length/1024)} Ko lus). Vérifie dans OneDrive qu'il n'existe pas une autre copie plus récente, par exemple « ${file.name.replace(/\.json$/i,"")} (1).json ».`)}
   if(o&&o.data&&o.data.accounts&&!o.accounts)o=o.data;
   if(!o||!Array.isArray(o.accounts)||!Array.isArray(o.tx)||!Array.isArray(o.categories))return ko(`« ${file.name} » n'est pas un fichier de données PognonPILOT (il ne contient pas de comptes et d'opérations).`);
-  const go=async()=>{if(S&&S.accounts.length&&!S.sample)await snap("Avant ouverture d'un fichier");S=buildS(o);
+  const go=async()=>{if(S&&S.accounts.length&&!S.sample)await snap("Avant ouverture d'un fichier");S=buildS(o);pendSet(null);
     if(handle)await linkHandle(handle);dirty=false;lastSaved=Math.max(Date.now(),file.lastModified||0);cache();view="dash";render();
     toast(`${handle?"Fichier lié":"Fichier ouvert"} : ${S.accounts.length} comptes, ${S.tx.length} opérations`)};
   if(dirty&&S.accounts.length)confirmSheet("Remplacer les données actuelles ?","Tes dernières modifications n'ont pas été enregistrées. Elles seront perdues si tu ouvres ce fichier.","Ouvrir quand même",go);else await go();
@@ -1936,6 +1948,8 @@ window.addEventListener("popstate",e=>{if(e.state&&e.state.pp===1)return;
   const rearm=()=>{try{history.pushState({pp:1},"")}catch(_){}};
   if(modal.innerHTML){if(modalEdited&&Date.now()-modalBackArm>2000){modalBackArm=Date.now();toast("Modifications non enregistrées : appuie encore sur retour pour fermer la fenêtre");rearm();return}closeSheet();rearm();return}
   if(NAVH.p>0){navGo(-1);rearm();return}
+  if(MOBSEND()&&dirty){rearm();openSheet(`<h2>Quitter sans envoyer ?</h2><p style="color:var(--muted);margin:0">${esc(pendTxt())} : ils ne sont pas encore sur OneDrive. Ils restent sur ce téléphone, mais ton PC ne les verra pas.</p><div class="actions col1"><button class="btn primary" id="q-send">Envoyer vers OneDrive</button><button class="btn" id="q-quit">Quitter quand même</button><button class="btn" data-close>Rester dans l'appli</button></div>`);
+    document.getElementById("q-send").onclick=()=>{closeSheet();saveJson()};document.getElementById("q-quit").onclick=()=>{closeSheet();history.go(-2)};return}
   if(Date.now()-backArm<2000){history.back();return}
   backArm=Date.now();toast("Appuie encore sur retour pour quitter");rearm()});
 document.getElementById("fab").onclick=()=>txSheet();
@@ -1943,6 +1957,7 @@ document.getElementById("fileJson").onchange=e=>{const f=e.target.files[0];e.tar
 document.getElementById("fileImport").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)handleImport(f)};
 
 load();render();loadIdb().then(()=>initFile()).then(()=>setTimeout(dailySnap,1500));
+setTimeout(()=>{if(MOBSEND()&&dirty&&!modal.innerHTML){openSheet(`<h2>Envoi en attente</h2><p style="color:var(--muted);margin:0">${esc(pendTxt())} : pas encore envoyés vers OneDrive. Ton PC ne les verra qu'après l'envoi.</p><div class="actions"><div class="row"><button class="btn" data-close>Plus tard</button><button class="btn primary" id="p-send">Envoyer maintenant</button></div></div>`);document.getElementById("p-send").onclick=()=>{closeSheet();saveJson()}}},900);
 </script>
 
 </body>
