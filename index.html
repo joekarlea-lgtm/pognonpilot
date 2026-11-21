@@ -426,6 +426,31 @@ select.prefill{box-shadow:0 0 0 3px var(--accent-soft);border-color:var(--accent
 .chip.P{border:2px solid var(--warn);color:var(--warn);background:transparent;font-weight:800}
 /* registre PC */
 .rpc{display:grid;grid-template-columns:230px minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;height:calc(100vh - 110px);min-height:520px}
+@media (min-width:821px){body.regpc main{max-width:none}body.regpc .app{grid-template-columns:72px minmax(0,1fr)}body.regpc .rail{padding:16px 10px;align-items:center}body.regpc .brand{font-size:0;padding:0 0 14px;gap:0}body.regpc .nav{font-size:0;gap:0;padding:11px;justify-content:center}body.regpc .nav svg{width:21px;height:21px}body.regpc .savechip,body.regpc #installbtn{display:none}}
+.rpc{grid-template-columns:272px minmax(0,1fr)!important;font-size:14px}
+.rpc.noside{grid-template-columns:minmax(0,1fr)!important}
+.rgrp{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:14px 12px 6px!important}.rgrp b{font-size:12px;letter-spacing:0;font-weight:700}
+.rside .racc{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:10px;row-gap:1px;align-items:center;padding:7px 10px;border-radius:10px;width:calc(100% - 12px);margin:0 6px}
+.rside .racc>:first-child{grid-row:1/3;align-self:center}.rside .racc .rn{font-weight:600;font-size:13.5px;line-height:1.25;white-space:normal;overflow:visible;min-width:0}.rside .racc .rb{text-align:right;font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}.rside .racc .rb.neg{color:var(--neg)}
+.rside .racc .blogo,.rside .racc .ini{display:grid;place-items:center;border-radius:8px;overflow:hidden}.rside .racc .blogo img{max-width:100%;max-height:100%}
+.rside .racc.on{background:var(--surface);box-shadow:inset 3px 0 0 var(--accent),0 1px 3px rgba(0,0,0,.15)}.rside .racc.on .rn{color:var(--accent)}
+.rside .racc[data-racc="all"]{display:block;font-weight:700;padding:9px 12px}
+.rtop h1{font-size:24px!important}.rbal div{background:var(--surface-2);border:0!important;padding:8px 14px!important;min-width:150px!important}.rbal b{font-size:19px!important}
+.rtb{padding:10px 16px!important;row-gap:8px}.rtb .search{min-width:180px}
+.rfilt{position:relative}.rfilt summary{list-style:none}.rfilt summary::-webkit-details-marker{display:none}.rfilt summary.on{border-color:var(--accent);color:var(--accent)}
+.rfpop{position:absolute;z-index:20;top:calc(100% + 6px);left:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 12px 30px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:10px;min-width:240px}
+table.g{font-size:14px!important;min-width:760px!important}
+.g thead th{font-size:11.5px!important;padding:10px 10px!important}
+.g td{padding:8px 10px!important}
+.g .gd{font-weight:600}
+.gtc{display:inline-flex;flex-direction:column;min-width:0;max-width:calc(100% - 20px);vertical-align:middle}.gtc>b{font-weight:700;overflow:hidden;text-overflow:ellipsis}.gtc>span{color:var(--muted);font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis}.gtc em{font-style:normal;color:var(--fg);font-weight:600}.gtc .gvir{color:var(--muted);font-weight:600}
+.gmi{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px}.gmi svg{width:15px;height:15px}
+.gfm{padding:3px 0!important;font-size:11px!important;width:40px!important}
+.g tr.gmonth td{font-size:12px!important;padding:8px 10px!important}.gmt{float:right;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}.gmt b{color:var(--fg)}
+.g tbody tr[data-gx]:nth-of-type(even) td{background:color-mix(in srgb,var(--surface-2) 70%,transparent)!important}
+.g tbody tr.selr td{background:color-mix(in srgb,var(--accent) 24%,transparent)!important}
+.g td.neg,.g td.pos{font-weight:700}
+.gck{width:22px!important;height:22px!important}
 .rpc.noside{grid-template-columns:minmax(0,1fr)}.rpc.noside .rside{display:none}.gchq{color:var(--muted);font-size:12px}
 .rside{border-right:1px solid var(--line);background:var(--surface-2);overflow-y:auto;padding:8px 0;font-size:13px;display:flex;flex-direction:column}
 .rgrp{padding:12px 14px 4px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
@@ -869,7 +894,7 @@ function addNav(){main.querySelectorAll(".hnav").forEach(x=>x.remove());if(NAVH.
 const navBtns=()=>{const pv=NAVH.h[NAVH.p-1],nx=NAVH.h[NAVH.p+1];return`<div class="hnav"><button class="nb" data-hist="-1" ${pv?"":"disabled"} title="${pv?"Retour : "+esc(navLabel(pv)):"Pas d'écran précédent"}" aria-label="Retour">‹<span>${pv?esc(navLabel(pv)):"Retour"}</span></button><button class="nb" data-hist="1" ${nx?"":"disabled"} title="${nx?"Suivant : "+esc(navLabel(nx)):"Pas d'écran suivant"}" aria-label="Suivant">›</button></div>`};
 function render(){
   navRecord();
-  if(view!=="reg")rapSel=null;{const f=document.getElementById("fab");if(f)f.hidden=!!rapSel||!["dash","reg","acc"].includes(view)||(view==="reg"&&isPCReg())}
+  document.body.classList.toggle("regpc",view==="reg"&&isPCReg());if(view!=="reg")rapSel=null;{const f=document.getElementById("fab");if(f)f.hidden=!!rapSel||!["dash","reg","acc"].includes(view)||(view==="reg"&&isPCReg())}
   document.querySelectorAll(".nav").forEach(b=>b.setAttribute("aria-current",b.dataset.view===view?"page":"false"));
   renderChip();
   ({home:renderHome,dash:renderDash,reg:renderReg,rec:renderRec,acc:renderAcc,rep:renderRep,cat:renderCat,file:renderFile})[view]();addNav();
@@ -993,7 +1018,7 @@ function regRows(){
   const F=regCF,num=v=>parseFloat(String(v).replace(",",".").replace(/[^\d.]/g,""));
   if(F.date)list=list.filter(t=>fdate(t.date).includes(F.date.trim()));
   if(F.mode)list=list.filter(t=>(t.mode||"")===F.mode);
-  if(F.tiers)list=list.filter(t=>foldR(t.payee).includes(foldR(F.tiers)));
+  if(F.tiers)list=list.filter(t=>foldR(t.payee+" "+(isSplit(t)?splitSummary(t):catLabel(t))).includes(foldR(F.tiers)));
   if(F.cat)list=list.filter(t=>foldR(isSplit(t)?splitSummary(t):catLabel(t)).includes(foldR(F.cat)));
   if(F.note)list=list.filter(t=>foldR((t.note||"")+" "+(t.splits||[]).map(p=>p.note||"").join(" ")).includes(foldR(F.note)));
   if(F.chq)list=list.filter(t=>String(t.chq||"").includes(F.chq.trim()));
@@ -1017,9 +1042,9 @@ function renderRegPC(){
   {const k=regAcc+"|"+regF+"|"+regQ+"|"+regPer+"|"+JSON.stringify(regCF)+"|"+regHideR;if(k!==regLimKey){regLimKey=k;regLim=400}}
   const visIds=new Set(list.map(t=>t.id));[...regSel].forEach(id=>{if(!visIds.has(id))regSel.delete(id)});
   const side=(()=>{const accs=S.accounts.filter(x=>!x.closed||showClosed||x.id===regAcc);let h=`<button class="racc${all?" on":""}" data-racc="all"><span>Toutes les opérations</span></button>`;
-    TYPES.forEach(ty=>{const l=accs.filter(x=>x.type===ty).sort(byName);if(!l.length)return;h+=`<div class="rgrp">${esc(ty)}</div>`+l.map(x=>{const b=balance(x.id);return`<button class="racc${x.id===regAcc?" on":""}${x.closed?" off":""}" data-racc="${x.id}" title="${esc(x.name)}"><span>${esc(x.name)}</span><span class="num ${b<0?"neg":""}">${fmtN(b)}</span></button>`}).join("")});
+    TYPES.forEach(ty=>{const l=accs.filter(x=>x.type===ty).sort(byName);if(!l.length)return;const gt=l.filter(x=>!x.closed).reduce((s2,x)=>s2+balance(x.id),0);h+=`<div class="rgrp"><span>${esc(ty)}</span><b class="num">${fmtN(gt)}</b></div>`+l.map(x=>{const b=balance(x.id);return`<button class="racc${x.id===regAcc?" on":""}${x.closed?" off":""}" data-racc="${x.id}" title="${esc(x.name)}">${accIni(x,"width:28px;height:28px")}<span class="rn">${esc(x.name)}${x.closed?' <span class="cat">· clôturé</span>':""}</span><span class="rb num ${b<0?"neg":""}">${fmtN(b)}</span></button>`}).join("")});
     const tot=active().reduce((s,x)=>s+balance(x.id),0);
-    return h+`<div class="rtot"><span>Total des comptes actifs</span><b class="num">${fmtN(tot)}</b></div><label class="rclo"><input type="checkbox" id="reg-closed" ${showClosed?"checked":""}> Afficher les comptes clôturés</label>`})();
+    return h+`<div class="rtot"><span>Total actifs</span><b class="num">${fmtN(tot)}</b></div><label class="rclo"><input type="checkbox" id="reg-closed" ${showClosed?"checked":""}> Afficher les comptes clôturés</label>`})();
   const B=a?regBal(a):null;
   const nP=list.filter(t=>t.status==="P"),totP=Math.round(nP.reduce((x,t)=>x+t.amount,0)*100)/100;
   const cnt=f=>S.tx.filter(t=>(all||t.accountId===regAcc)&&f(t)).length;
@@ -1030,14 +1055,18 @@ function renderRegPC(){
   const fi=(k,ph)=>`<input class="gf" data-gf="${k}" value="${esc(regCF[k]||"")}" placeholder="${ph}" aria-label="Filtrer : ${ph}">`;
   const ck=t=>`<button class="gck ${t.status||"n"}" data-gck="${t.id}" title="Clic ou Espace : non pointée → P pointée → R rapprochée" aria-label="${t.status==="R"?"Rapprochée":t.status==="P"?"Pointée":"Non pointée"}">${t.status||""}</button>`;
   const catCell=t=>t.transferId?(()=>{const o=S.tx.find(x=>x.transferId===t.transferId&&x.id!==t.id);return`<span class="gx">⇄ Virement ${t.amount<0?"vers":"depuis"} ${esc(accById(o?.accountId)?.name||"?")}</span>`})():isSplit(t)?`<b>Ventilée · ${t.splits.length} parts</b>`:(()=>{const c=S.categories.find(c=>c.id===t.catId),sb=c?.subs.find(x=>x.id===t.subId);return c?`${esc(c.name)}${sb?` › <b>${esc(sb.name)}</b>`:""}`:'<span class="warnv">Non catégorisé</span>'})();
+  const byDate=regSort.k==="date";
+  const mIco=(m,chq)=>{if(!m)return"";const i=modeInfo(m);return`<span class="gmi t${i[2]}" title="${esc(m)}${chq?` n° ${esc(chq)}`:""}">${pillIco(i[1])}</span>`};
+  const tiersCell=t=>{if(t.transferId){const o=S.tx.find(x=>x.transferId===t.transferId&&x.id!==t.id);return`<b class="gvir">⇄ ${t.amount<0?"Vers":"Depuis"} ${esc(accById(o?.accountId)?.name||"?")}</b><span>Virement ${t.amount<0?"émis":"reçu"}</span>`}
+    const sp=isSplit(t);return`<b>${esc(t.payee)}${t.ord?` <span class="gord" title="Commande ${esc(t.ord)}">🛒</span>`:""}</b><span>${sp?`Ventilée · ${t.splits.length} parts`:(()=>{const c=S.categories.find(c=>c.id===t.catId),sb=c?.subs.find(x=>x.id===t.subId);return c?`${esc(c.name)}${sb?` › <em>${esc(sb.name)}</em>`:""}`:'<span class="warnv">Non catégorisé</span>'})()}</span>`};
   const amt=(t,neg)=>neg?(t.amount<0?fmtN(-t.amount):""):(t.amount>0?fmtN(t.amount):"");
   const rowH=t=>{const fut=t.date>td,sp=isSplit(t),op=regOpen.has(t.id),mi=missingOf(t);
-    let h=`<tr data-gx="${t.id}" class="${regSel.has(t.id)?"selr ":""}${fut?"fut ":""}${t.doubt?"averif ":""}${mi.length?"incomplete":""}"${t.doubt?` title="À vérifier : ${esc(t.doubt)}"`:mi.length?` title="À compléter : ${esc(mi.join(", "))}"`:""}><td class="c">${ck(t)}</td><td class="num">${fdate(t.date)}</td><td>${t.mode?`<span class="gmode">${esc(t.mode)}</span>`:""}${t.chq?` <span class="num gchq">${esc(t.chq)}</span>`:""}</td><td class="gt">${sp?`<button class="gchev" data-gopen="${t.id}" aria-expanded="${op}" aria-label="${op?"Replier":"Déplier"} les parts">${op?"▾":"▸"}</button>`:""}${esc(t.payee)}${t.ord?` <span class="gord" title="Commande ${esc(t.ord)}">🛒</span>`:""}</td><td class="gc">${catCell(t)}</td><td class="gn">${t.note?noteHtml(t.note,"gnote"):""}</td><td class="r num neg">${amt(t,1)}</td><td class="r num pos">${amt(t,0)}</td>${a?`<td class="r num gs ${run[t.id]<0?"neg":""}">${fmtN(run[t.id])}</td>`:`<td class="gacc">${esc(accById(t.accountId)?.name||"")}</td>`}</tr>`;
-    if(sp&&op)h+=t.splits.map(p=>`<tr class="gsub" data-gx="${t.id}"><td></td><td></td><td></td><td></td><td class="gc">${catHtml(p.catId,p.subId)}</td><td class="gn">${p.note?noteHtml(p.note,"gnote"):""}</td><td class="r num">${p.amount<0?fmtN(-p.amount):""}</td><td class="r num">${p.amount>0?fmtN(p.amount):""}</td><td></td></tr>`).join("");
+    let h=`<tr data-gx="${t.id}" class="${regSel.has(t.id)?"selr ":""}${fut?"fut ":""}${t.doubt?"averif ":""}${mi.length?"incomplete":""}"${t.doubt?` title="À vérifier : ${esc(t.doubt)}"`:mi.length?` title="À compléter : ${esc(mi.join(", "))}"`:""}><td class="c">${ck(t)}</td><td class="num gd">${byDate?fdate(t.date).slice(0,5):fdate(t.date)}</td><td class="c">${mIco(t.mode,t.chq)}</td><td class="gt">${sp?`<button class="gchev" data-gopen="${t.id}" aria-expanded="${op}" aria-label="${op?"Replier":"Déplier"} les parts">${op?"▾":"▸"}</button>`:""}<div class="gtc">${tiersCell(t)}</div></td><td class="gn">${t.note?noteHtml(t.note,"gnote"):""}</td><td class="r num neg">${amt(t,1)}</td><td class="r num pos">${amt(t,0)}</td>${a?`<td class="r num gs ${run[t.id]<0?"neg":""}">${fmtN(run[t.id])}</td>`:`<td class="gacc">${esc(accById(t.accountId)?.name||"")}</td>`}</tr>`;
+    if(sp&&op)h+=t.splits.map(p=>`<tr class="gsub" data-gx="${t.id}"><td></td><td></td><td></td><td class="gc">${catHtml(p.catId,p.subId)}</td><td class="gn">${p.note?noteHtml(p.note,"gnote"):""}</td><td class="r num">${p.amount<0?fmtN(-p.amount):""}</td><td class="r num">${p.amount>0?fmtN(p.amount):""}</td><td></td></tr>`).join("");
     return h};
-  const projH=p=>`<tr class="fut proj" data-gproj="${p.r.id}" title="Échéance prévue · double-clic pour la saisir"><td class="c"><span class="gck n">⟳</span></td><td class="num">${fdate(p.date)}</td><td>${p.mode?`<span class="gmode">${esc(p.mode)}</span>`:""}</td><td class="gt">${esc(p.payee)}</td><td class="gc">${isSplit(p.r)?"<b>Ventilée</b>":catCell(p)}</td><td class="gn">Échéance prévue</td><td class="r num">${p.amount<0?fmtN(-p.amount):""}</td><td class="r num">${p.amount>0?fmtN(p.amount):""}</td>${a?`<td class="r num gs">${fmtN(run[p.id])}</td>`:`<td class="gacc">${esc(accById(p.accountId)?.name||"")}</td>`}</tr>`;
-  const byDate=regSort.k==="date";let body="",lastM="";
-  const sep=t=>{if(!byDate)return"";const m=t.date>td?"fut":t.date.slice(0,7);if(m===lastM)return"";lastM=m;return`<tr class="gmonth"><td colspan="9">${m==="fut"?"À venir":GMONTHS[+m.slice(5,7)-1]+" "+m.slice(0,4)}</td></tr>`};
+  const projH=p=>`<tr class="fut proj" data-gproj="${p.r.id}" title="Échéance prévue · double-clic pour la saisir"><td class="c"><span class="gck n">⟳</span></td><td class="num gd">${fdate(p.date).slice(0,5)}</td><td class="c">${mIco(p.mode)}</td><td class="gt"><div class="gtc"><b>${esc(p.payee)}</b><span>${isSplit(p.r)?"Ventilée":catCell(p)}</span></div></td><td class="gn">Échéance prévue</td><td class="r num">${p.amount<0?fmtN(-p.amount):""}</td><td class="r num">${p.amount>0?fmtN(p.amount):""}</td>${a?`<td class="r num gs">${fmtN(run[p.id])}</td>`:`<td class="gacc">${esc(accById(p.accountId)?.name||"")}</td>`}</tr>`;
+  let body="",lastM="";const mt={};[...proj,...list].forEach(t=>{const m=t.date>td?"fut":t.date.slice(0,7);const o=mt[m]=mt[m]||{d:0,c:0};if(t.amount<0)o.d-=t.amount;else o.c+=t.amount});
+  const sep=t=>{if(!byDate)return"";const m=t.date>td?"fut":t.date.slice(0,7);if(m===lastM)return"";lastM=m;const o=mt[m];return`<tr class="gmonth"><td colspan="8">${m==="fut"?"À venir":GMONTHS[+m.slice(5,7)-1]+" "+m.slice(0,4)}<span class="gmt">Débits <b class="num">${fmtN(o.d)}</b> · Crédits <b class="num">${fmtN(o.c)}</b></span></td></tr>`};
   proj.forEach(p=>{body+=sep(p)+projH(p)});
   list.slice(0,regLim).forEach(t=>{body+=sep(t)+rowH(t)});
   const per=[["1m","Dernier mois"],["3m","3 derniers mois"],["12m","12 derniers mois"],["ytd","Année en cours"],["all","Toute la période"]];
@@ -1045,19 +1074,18 @@ function renderRegPC(){
   main.innerHTML=`${banner()}<div class="rpc${regSide?"":" noside"}">
    <aside class="rside" aria-label="Comptes">${side}</aside>
    <section class="rmain">
-    <div class="rtop"><button class="btn small rsidebtn" data-gact="side" title="${regSide?"Masquer":"Afficher"} la liste des comptes" aria-label="${regSide?"Masquer":"Afficher"} la liste des comptes">${regSide?"◧":"☰ Comptes"}</button><div><h1>${a?esc(a.name):"Toutes les opérations"}</h1><span class="cat">${a?esc([a.type,a.bank].filter(Boolean).join(" · ")):`${S.accounts.filter(x=>!x.closed).length} comptes actifs`}</span></div>
-     ${a?`<div class="rbal"><div><small>Solde actuel</small><b class="num ${B.act<0?"neg":""}">${fmt(B.act)}</b></div><div><small>Solde en banque (R)</small><b class="num ${B.bank<0?"neg":""}">${fmt(B.bank)}</b></div><div><small>Solde futur · 30 j</small><b class="num ${B.fut<0?"neg":""}">${fmt(B.fut)}</b></div></div>`:""}</div>
+    <div class="rtop"><button class="btn small rsidebtn" data-gact="side" title="${regSide?"Masquer":"Afficher"} la liste des comptes" aria-label="${regSide?"Masquer":"Afficher"} la liste des comptes">${regSide?"◧":"☰ Comptes"}</button><div><h1>${a?esc(a.name):"Toutes les opérations"}</h1><span class="cat">${a?esc([a.type,a.bank].filter(Boolean).join(" · "))+` · ${list.length.toLocaleString("fr-FR")} opération${list.length>1?"s":""}`:`${S.accounts.filter(x=>!x.closed).length} comptes actifs`}</span></div>
+     ${a?`<div class="rbal"><div><small>Solde actuel</small><b class="num ${B.act<0?"neg":""}">${fmt(B.act)}</b></div><div><small>En banque (R)</small><b class="num ${B.bank<0?"neg":""}">${fmt(B.bank)}</b></div><div><small>Futur · 30 j</small><b class="num ${B.fut<0?"neg":""}">${fmt(B.fut)}</b></div></div>`:""}</div>
     <div class="rtb">
      <button class="btn primary small" data-gact="new">+ Nouvelle</button><button class="btn small" data-gact="edit" ${sel.length===1?"":"disabled"}>✎ Modifier</button><button class="btn small" data-gact="dup" ${sel.length===1?"":"disabled"}>⧉ Dupliquer</button><button class="btn small" data-gact="del" ${sel.length?"":"disabled"}>🗑 Supprimer</button><span class="rsep"></span>
      <button class="btn small" data-gact="valp" ${nP.length?"":"disabled"} title="Passer en R toutes les opérations pointées P">✓ Valider les pointées${nP.length?` · ${nP.length}`:""}</button><button class="btn small" data-gact="vir">⇄ Virement</button><span class="rsep"></span>
      <select class="inp small" id="g-per" aria-label="Période">${per.map(([k,l])=>`<option value="${k}" ${regPer===k?"selected":""}>${l}</option>`).join("")}</select>
-     <select class="inp small" id="g-show" aria-label="Afficher">${shw.map(([k,l])=>`<option value="${k}" ${regF===k?"selected":""}>${l}</option>`).join("")}</select>
-     <label class="rchk"><input type="checkbox" id="g-hider" ${regHideR?"checked":""}> Masquer les rapprochées</label>
+     <details class="rfilt"><summary class="btn small${regF!=="all"||regHideR?" on":""}">Filtres${regF!=="all"||regHideR?" · actifs":""} ▾</summary><div class="rfpop"><label class="lbl">Afficher</label><select class="inp small" id="g-show" aria-label="Afficher">${shw.map(([k,l])=>`<option value="${k}" ${regF===k?"selected":""}>${l}</option>`).join("")}</select><label class="rchk"><input type="checkbox" id="g-hider" ${regHideR?"checked":""}> Masquer les rapprochées</label></div></details>
      <input class="inp small search" id="q" type="search" placeholder="Rechercher (/)" value="${esc(regQ)}">
     </div>
-    <div class="rgrid"><table class="g"><colgroup><col style="width:40px"><col style="width:100px"><col style="width:112px"><col style="width:20%"><col style="width:24%"><col><col style="width:86px"><col style="width:86px"><col style="width:${a?100:150}px"></colgroup><thead><tr>${th("st","R","c")}${th("date","Date")}${th("mode","Mode · N°")}${th("tiers","Tiers")}${th("cat","Catégorie")}${th("note","Note")}${th("deb","Débit","r")}${th("cre","Crédit","r")}${a?th("solde","Solde","r"):th("acc","Compte")}</tr>
-     <tr class="gfr"><td></td><td>${fi("date","jj/mm/aaaa")}</td><td><select class="gf" data-gf="mode" aria-label="Filtrer : mode"><option value="">Tous</option>${modes.map(m=>`<option ${regCF.mode===m?"selected":""}>${esc(m)}</option>`).join("")}</select></td><td>${fi("tiers","Filtrer…")}</td><td>${fi("cat","Filtrer…")}</td><td>${fi("note","Filtrer…")}</td><td>${fi("deb","≥")}</td><td>${fi("cre","≥")}</td><td>${Object.values(regCF).some(Boolean)?'<button class="link" data-gact="clrf">Effacer</button>':""}</td></tr></thead>
-     <tbody>${body||`<tr><td colspan="9" class="empty">Aucune opération ne correspond.</td></tr>`}</tbody></table>
+    <div class="rgrid"><table class="g"><colgroup><col style="width:44px"><col style="width:${byDate?70:100}px"><col style="width:48px"><col style="width:32%"><col><col style="width:104px"><col style="width:104px"><col style="width:${a?112:170}px"></colgroup><thead><tr>${th("st","R","c")}${th("date","Date")}${th("mode","Mode","c")}${th("tiers","Tiers / catégorie")}${th("note","Note")}${th("deb","Débit","r")}${th("cre","Crédit","r")}${a?th("solde","Solde","r"):th("acc","Compte")}</tr>
+     <tr class="gfr"><td></td><td>${fi("date","jj/mm")}</td><td class="c"><select class="gf gfm" data-gf="mode" aria-label="Filtrer : mode" title="Filtrer par mode"><option value="">Tous</option>${modes.map(m=>`<option ${regCF.mode===m?"selected":""}>${esc(m)}</option>`).join("")}</select></td><td>${fi("tiers","Tiers ou catégorie…")}</td><td>${fi("note","Filtrer…")}</td><td>${fi("deb","≥")}</td><td>${fi("cre","≥")}</td><td>${Object.values(regCF).some(Boolean)?'<button class="link" data-gact="clrf">Effacer</button>':""}</td></tr></thead>
+     <tbody>${body||`<tr><td colspan="8" class="empty">Aucune opération ne correspond.</td></tr>`}</tbody></table>
      ${list.length>regLim?`<div class="regmore"><span>${regLim} opérations affichées sur ${list.length}</span><button class="btn" data-regmore="400">Afficher les ${Math.min(400,list.length-regLim)} suivantes</button><button class="btn" data-regmore="all">Tout afficher</button></div>`:""}</div>
     <div class="rstat"><span><b>${list.length.toLocaleString("fr-FR")}</b> opération${list.length>1?"s":""}</span><span class="gselinfo">${sel.length?`${sel.length} sélectionnée${sel.length>1?"s":""} : <b class="num">${fmt(selTot)}</b>`:""}</span><span>Pointées P : <b>${nP.length}</b>${nP.length?` · <b class="num">${fmt(totP)}</b>`:""}${a&&nP.length?` · solde en banque après validation : <b class="num">${fmt(Math.round((B.bank+totP)*100)/100)}</b>`:""}</span>${a?`<span>Dernier rapprochement : <b>${a.rkDate?fdate(a.rkDate):"—"}</b></span>`:""}<span class="cat">Double-clic : ouvrir · Espace : pointer · Suppr : supprimer · Ctrl/Maj + clic : sélection multiple</span></div>
    </section></div>`;
@@ -1066,7 +1094,7 @@ function renderRegPC(){
   main.querySelectorAll("input.gf").forEach(i=>i.addEventListener("input",()=>{regCF[i.dataset.gf]=i.value;const pos=i.selectionStart,k=i.dataset.gf;renderReg();const n=main.querySelector(`input.gf[data-gf="${k}"]`);if(n){n.focus();n.setSelectionRange(pos,pos)}}));
   main.querySelector('select.gf[data-gf="mode"]').onchange=e=>{regCF.mode=e.target.value;renderReg()};
   document.getElementById("g-per").onchange=e=>{regPer=e.target.value;renderReg()};
-  document.getElementById("g-show").onchange=e=>{regF=e.target.value;regSel.clear();renderReg()};
+  document.getElementById("g-show").onchange=e=>{regF=e.target.value;regSel.clear();render()};
   document.getElementById("g-hider").onchange=e=>{regHideR=e.target.checked;renderReg()};
   const rc=document.getElementById("reg-closed");if(rc)rc.onchange=e=>{showClosed=e.target.checked;renderReg()};
 }
@@ -1104,6 +1132,7 @@ document.addEventListener("keydown",e=>{if(view!=="reg"||modal.innerHTML||!main.
   if((e.key==="Delete"||e.key==="Backspace")&&ids.length){e.preventDefault();gDelete(ids);return}
   if(e.key==="Enter"&&ids.length===1){e.preventDefault();txSheet(ids[0]);return}
   if(e.key==="ArrowDown"||e.key==="ArrowUp"){const v=gVisible();if(!v.length)return;e.preventDefault();const cur=regAnchor&&v.includes(regAnchor)?v.indexOf(regAnchor):-1;const n=Math.max(0,Math.min(v.length-1,cur+(e.key==="ArrowDown"?1:-1)));regSel=new Set([v[n]]);regAnchor=v[n];gSelUpdate();main.querySelector(`tr[data-gx="${v[n]}"]`)?.scrollIntoView({block:"nearest"})}});
+document.querySelectorAll(".rail .nav").forEach(b=>{if(!b.title)b.title=b.textContent.trim()});
 let regMQ=matchMedia("(min-width:1100px)");regMQ.addEventListener?.("change",()=>{if(view==="reg")render()});
 function renderReg0(){if(rapSel&&rapAcc!==regAcc)rapSel=null;if(isPCReg()){renderRegPC();return}
   if(regAcc!=="all"&&!accById(regAcc))regAcc="all";
@@ -1970,7 +1999,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="64";
+const APP_VERSION="65";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
