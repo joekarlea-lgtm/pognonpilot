@@ -448,6 +448,7 @@ table.g{font-size:14px!important;min-width:760px!important}
 .gfm{padding:3px 0!important;font-size:11px!important;width:40px!important}
 .g tr.gmonth td{position:sticky;top:var(--gth,74px);z-index:1;font-size:12.5px!important;padding:10px 12px!important;text-transform:none!important;letter-spacing:0!important;color:var(--fg)!important;background:color-mix(in srgb,var(--accent) 16%,var(--surface))!important;border-top:2px solid var(--accent);border-bottom:1px solid var(--line)}
 .g .gml{font-size:15px;font-weight:800}
+tr.gflash td{animation:gflash 1.3s ease-out}@keyframes gflash{0%,35%{background:color-mix(in srgb,var(--pos) 28%,transparent)!important;box-shadow:inset 0 0 0 9999px color-mix(in srgb,var(--pos) 22%,transparent)}100%{box-shadow:none}}
 .g tr.ggap td{height:14px;padding:0!important;border:0;background:var(--surface)!important}.gmt{float:right;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}.gmt b{color:var(--fg)}
 .g tbody tr[data-gx]:nth-of-type(even) td{background:color-mix(in srgb,var(--surface-2) 70%,transparent)!important}
 .g tbody tr.selr td{background:color-mix(in srgb,var(--accent) 24%,transparent)!important}
@@ -896,7 +897,7 @@ function addNav(){main.querySelectorAll(".hnav").forEach(x=>x.remove());if(NAVH.
 const navBtns=()=>{const pv=NAVH.h[NAVH.p-1],nx=NAVH.h[NAVH.p+1];return`<div class="hnav"><button class="nb" data-hist="-1" ${pv?"":"disabled"} title="${pv?"Retour : "+esc(navLabel(pv)):"Pas d'écran précédent"}" aria-label="Retour">‹<span>${pv?esc(navLabel(pv)):"Retour"}</span></button><button class="nb" data-hist="1" ${nx?"":"disabled"} title="${nx?"Suivant : "+esc(navLabel(nx)):"Pas d'écran suivant"}" aria-label="Suivant">›</button></div>`};
 function render(){
   navRecord();
-  document.body.classList.toggle("regpc",view==="reg"&&isPCReg());if(view!=="reg")rapSel=null;{const f=document.getElementById("fab");if(f)f.hidden=!!rapSel||!["dash","reg","acc"].includes(view)||(view==="reg"&&isPCReg())}
+  document.body.classList.toggle("regpc",view==="reg"&&isPCReg());if(view!=="reg"){rapSel=null;regFocus=null}{const f=document.getElementById("fab");if(f)f.hidden=!!rapSel||!["dash","reg","acc"].includes(view)||(view==="reg"&&isPCReg())}
   document.querySelectorAll(".nav").forEach(b=>b.setAttribute("aria-current",b.dataset.view===view?"page":"false"));
   renderChip();
   ({home:renderHome,dash:renderDash,reg:renderReg,rec:renderRec,acc:renderAcc,rep:renderRep,cat:renderCat,file:renderFile})[view]();addNav();
@@ -1002,6 +1003,7 @@ function dupDelete(id){const i=S.tx.findIndex(x=>x.id===id);if(i<0)return;const 
     toastUndo("Doublon supprimé",()=>{S.tx.splice(Math.min(i,S.tx.length),0,t);commit();toast("Suppression annulée")})})}
 function renderReg(){navRecord();renderReg0();addNav()}
 let regSide=(()=>{try{const v=localStorage.getItem(KEY+".rside");return v?v==="1":innerWidth>=1500}catch(e){return innerWidth>=1500}})();
+let regFocus=null;
 let regPer="3m",regCF={},regSort={k:"date",d:-1},regSel=new Set(),regAnchor=null,regOpen=new Set(),regHideR=false;
 const isPCReg=()=>!IS_MOBILE&&matchMedia("(min-width:1100px)").matches&&regF!=="dup"&&!rapSel;
 const foldR=x=>String(x||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
@@ -1073,6 +1075,7 @@ function renderRegPC(){
   list.slice(0,regLim).forEach(t=>{body+=sep(t)+rowH(t)});
   const per=[["1m","Dernier mois"],["3m","3 derniers mois"],["12m","12 derniers mois"],["ytd","Année en cours"],["all","Toute la période"]];
   const shw=[["all","Toutes les opérations"],["month","Ce mois-ci"],["dep","Dépenses"],["rev","Revenus"],["nr",`À rapprocher · ${nNr}`],["inc",`À compléter · ${nInc}`],["ver",`À vérifier · ${nVer}`],["dup",`Doublons ? · ${nDup}`]];
+  const keepY=window.scrollY,keepG=main.querySelector(".rgrid")?.scrollTop;
   main.innerHTML=`${banner()}<div class="rpc${regSide?"":" noside"}">
    <aside class="rside" aria-label="Comptes">${side}</aside>
    <section class="rmain">
@@ -1093,6 +1096,10 @@ function renderRegPC(){
    </section></div>`;
   {const f=document.getElementById("fab");if(f)f.hidden=true}
   {const th=main.querySelector(".g thead");if(th)main.querySelector(".rgrid").style.setProperty("--gth",th.offsetHeight+"px")}
+  {const g=main.querySelector(".rgrid");if(g&&keepG!=null)g.scrollTop=keepG;window.scrollTo(0,keepY);
+   if(regFocus){const id=regFocus;regFocus=null;const tr=main.querySelector(`tr[data-gx="${CSS.escape(id)}"]`);if(tr){regSel=new Set([id]);regAnchor=id;gSelUpdate();
+     if(g){const gr=g.getBoundingClientRect(),r=tr.getBoundingClientRect(),top=gr.top+(parseFloat(getComputedStyle(g).getPropertyValue("--gth"))||74)+40;if(r.top<top||r.bottom>gr.bottom)tr.scrollIntoView({block:"center"})}
+     tr.classList.add("gflash");setTimeout(()=>tr.classList.remove("gflash"),1300)}}}
   const qi=document.getElementById("q");qi.addEventListener("input",()=>{regQ=qi.value;const pos=qi.selectionStart;renderReg();const n=document.getElementById("q");n.focus();n.setSelectionRange(pos,pos)});
   main.querySelectorAll("input.gf").forEach(i=>i.addEventListener("input",()=>{regCF[i.dataset.gf]=i.value;const pos=i.selectionStart,k=i.dataset.gf;renderReg();const n=main.querySelector(`input.gf[data-gf="${k}"]`);if(n){n.focus();n.setSelectionRange(pos,pos)}}));
   main.querySelector('select.gf[data-gf="mode"]').onchange=e=>{regCF.mode=e.target.value;renderReg()};
@@ -1137,7 +1144,8 @@ document.addEventListener("keydown",e=>{if(view!=="reg"||modal.innerHTML||!main.
   if(e.key==="ArrowDown"||e.key==="ArrowUp"){const v=gVisible();if(!v.length)return;e.preventDefault();const cur=regAnchor&&v.includes(regAnchor)?v.indexOf(regAnchor):-1;const n=Math.max(0,Math.min(v.length-1,cur+(e.key==="ArrowDown"?1:-1)));regSel=new Set([v[n]]);regAnchor=v[n];gSelUpdate();main.querySelector(`tr[data-gx="${v[n]}"]`)?.scrollIntoView({block:"nearest"})}});
 document.querySelectorAll(".rail .nav").forEach(b=>{if(!b.title)b.title=b.textContent.trim()});
 let regMQ=matchMedia("(min-width:1100px)");regMQ.addEventListener?.("change",()=>{if(view==="reg")render()});
-function renderReg0(){if(rapSel&&rapAcc!==regAcc)rapSel=null;if(isPCReg()){renderRegPC();return}
+function renderReg0(){if(rapSel&&rapAcc!==regAcc)rapSel=null;if(isPCReg()){renderRegPC();return}const keepY0=window.scrollY;renderReg0b();window.scrollTo(0,keepY0);if(regFocus){const id=regFocus;regFocus=null;const tr=main.querySelector(`tr[data-tx="${CSS.escape(id)}"]`);if(tr){const r=tr.getBoundingClientRect();if(r.top<80||r.bottom>innerHeight-90)tr.scrollIntoView({block:"center"});tr.classList.add("gflash");setTimeout(()=>tr.classList.remove("gflash"),1300)}}}
+function renderReg0b(){
   if(regAcc!=="all"&&!accById(regAcc))regAcc="all";
   const DUPS=dupPairs(regAcc);const ORDN={};S.tx.forEach(t=>{if(t.ord)ORDN[t.ord]=(ORDN[t.ord]||0)+1});
   let list=S.tx.filter(t=>regAcc==="all"||t.accountId===regAcc);
@@ -1749,12 +1757,12 @@ function txSheet(id,presetMode,pre){
       if(mode==="vir"){
         const dest=document.getElementById("f-to").value;if(dest===acc){toast("Choisis deux comptes différents.");return}
         const tid=uid(),A=accById(acc).name,B=accById(dest).name;const vord=(document.getElementById("f-ord")?.value||"").trim(),vo=vord?{ord:vord}:{};
-        S.tx.push({id:uid(),accountId:acc,date,payee:`Virement vers ${B}`,amount:-amt,transferId:tid,status:st,note,mode:pm,...dvo,...vo});
+        const vid=uid();regFocus=vid;S.tx.push({id:vid,accountId:acc,date,payee:`Virement vers ${B}`,amount:-amt,transferId:tid,status:st,note,mode:pm,...dvo,...vo});
         S.tx.push({id:uid(),accountId:dest,date,payee:`Virement depuis ${A}`,amount:amt,transferId:tid,status:st,note,mode:pm,...dvo,...vo});
       }else{
         const [catId,subId]=(document.getElementById("f-cat").value||"|").split("|");
         const pn=document.getElementById("f-payee").value.trim()||"Sans tiers";if(S.payees&&!S.payees.some(p=>p.name.toLowerCase()===pn.toLowerCase()))S.payees.push({id:uid(),name:pn,type:"",active:true});
-        const ord=(document.getElementById("f-ord")?.value||"").trim();S.tx.push({id:t?t.id:uid(),accountId:acc,date,payee:pn,amount:pnet!=null?pnet:(mode==="dep"?-amt:amt),catId:parts?null:(catId||null),subId:parts?null:(subId||null),...(parts?{splits:parts}:{}),status:st,note,mode:pm,...dvo,...(ord?{ord}:{})});
+        const ord=(document.getElementById("f-ord")?.value||"").trim();const nid=t?t.id:uid();regFocus=nid;S.tx.push({id:nid,accountId:acc,date,payee:pn,amount:pnet!=null?pnet:(mode==="dep"?-amt:amt),catId:parts?null:(catId||null),subId:parts?null:(subId||null),...(parts?{splits:parts}:{}),status:st,note,mode:pm,...dvo,...(ord?{ord}:{})});
       }
       const wasRec=recPending;if(wasRec)advanceRec(wasRec);
       closeSheet();commit();toast(t?"Opération modifiée":wasRec?"Échéance saisie, la suivante est programmée":"Opération ajoutée");
@@ -2002,7 +2010,7 @@ async function offerFile(filename,data,mime){
 function exportRows(){return expandSplits(sorted(S.tx)).map(t=>{const c=S.categories.find(c=>c.id===t.catId),s=c?.subs.find(s=>s.id===t.subId);
   return{Date:fdate(t.date),Compte:accById(t.accountId)?.name||"",Tiers:t.payee,Catégorie:t.transferId?"Virement":(c?.name||""),"Sous-catégorie":s?.name||"",Montant:t.amount,"Mode de paiement":t.mode||"","N° de chèque":t.chq||"","N° de commande":t.ord||"",Ventilation:t._part?`Part ${t._part}/${t._of}`:"",Statut:t.status==="R"?"R":"",Note:t.note||"","Note de l'opération":t._part?(t._opNote||""):(t.note||"")}})}
 /* ---------- fichier de données (OneDrive) ---------- */
-const APP_VERSION="67";
+const APP_VERSION="68";
 /* Sur Android, le fichier « lié » est une copie locale que OneDrive ne synchronise pas : on passe par le partage vers OneDrive. */
 const IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.userAgentData&&navigator.userAgentData.mobile);
 const FS_OK=!!(window.showOpenFilePicker&&window.showSaveFilePicker)&&!window.claude&&window.isSecureContext&&!IS_MOBILE;
